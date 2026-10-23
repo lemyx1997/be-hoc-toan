@@ -1,10 +1,7 @@
 // Giúp ứng dụng mở được khi không có mạng: lưu sẵn toàn bộ app và giọng đọc ngay lần đầu.
-const CORE = 'toan-tu-duy-v3';
-const VOICES = ['menu', 'chao', 'chonman', 'chondao', 'chinhphuc', 'mattim', 'thang', 'thua', 'sai', 'huychuong', 'ok0', 'ok1', 'ok2', 'sao1', 'sao2', 'sao3',
-  'cat0', 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'dem', 'nhieu', 'it', 'timnhom', 'sothieu', 'solon', 'sobe', 'gop', 'bot', 'tach', 'domino', 'chimden', 'baydi',
-  'dai', 'ngan', 'to', 'nho', 'cao', 'thap', 'nang', 'nhe', 'h0', 'h1', 'h2', 'h3', 'h4', 'h5', 'dh0', 'dh1', 'dh2', 'dh3', 'dh4', 'dh5', 'giong', 'vathinh',
-  'diemkhac', 'khac', 'thieu', 'quyluat', 'an', 'odau', 'nguoc', 'nghe', 'n0', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10'];
-const FILES = ['./', 'index.html', 'games.js', 'nhac.js', 'manifest.json', 'icon-192.png', 'icon-512.png', ...VOICES.map(v => 'giong/' + v + '.mp3')];
+const CORE = 'toan-tu-duy-v4';
+const VOICES = ['aichoi', 'an', 'baydi', 'bong_bot', 'bot', 'cao', 'cat0', 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'chao', 'chimden', 'chinhphuc', 'choan', 'chondao', 'chonman', 'chonmau', 'cuahang', 'cuu', 'dai', 'dem', 'dh0', 'dh1', 'dh2', 'dh3', 'dh4', 'dh5', 'diemkhac', 'domino', 'ga_them', 'gau_them', 'giong', 'gop', 'h0', 'h1', 'h2', 'h3', 'h4', 'h5', 'huychuong', 'it', 'keoqua', 'khac', 'khi_bot', 'latso', 'latthe', 'mattim', 'mecung', 'menu', 'meo_bot', 'mua', 'n0', 'n1', 'n10', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'nang', 'ngan', 'nghe', 'nghi', 'ngon', 'nguoc', 'nhanhmat', 'nhe', 'nhieu', 'nho', 'odau', 'ok0', 'ok1', 'ok2', 'phanloai', 'quyluat', 'ruong', 'sai', 'sao1', 'sao2', 'sao3', 'sobe', 'solon', 'sothieu', 'sticker', 'tach', 'thang', 'thap', 'thieu', 'thieuxu', 'tho_them', 'thua', 'timnhom', 'to', 'tomau', 'trum', 'vathinh', 'venha', 'xong0', 'xong1', 'xong2', 'xong3', 'xong4', 'xong5'];
+const FILES = ['./', 'index.html', 'games.js', 'app.js', 'nhac.js', 'manifest.json', 'icon-192.png', 'icon-512.png', ...VOICES.map(v => 'giong/' + v + '.mp3')];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CORE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

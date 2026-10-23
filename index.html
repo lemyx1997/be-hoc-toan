@@ -139,6 +139,109 @@ input[type=text]{font:inherit;font-size:24px;padding:10px 16px;border-radius:16p
 .bubble{position:fixed;right:20px;bottom:90px;z-index:6;background:#fff;border-radius:18px;padding:8px 14px;font-weight:800;font-size:18px;box-shadow:0 4px 12px #0002;display:none;max-width:220px}
 .bubble.show{display:block;animation:popin .3s}
 @media (max-width:520px){.who b{max-width:70px}.chip{font-size:14px;padding:5px 7px}.isle:nth-child(n){margin:0}.roof{border-left-width:110px;border-right-width:110px}.cell{width:44px;height:44px;font-size:28px}}
+/* ── Hàng nút nhỏ ở trang chủ ── */
+.quick{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:4px 0 16px}
+.qb{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border-radius:22px;padding:8px 10px;min-width:78px;font-size:13px;font-weight:800;box-shadow:0 5px 0 var(--sh);animation:popin .4s backwards}
+.qb .ic{font-size:34px}
+.qb.glow{background:#fff3c4;animation:pulse 1.2s infinite}
+.qb .dot{position:absolute;top:-6px;right:-6px;background:#e5484d;color:#fff;border-radius:12px;padding:0 7px;font-size:12px}
+/* ── Đếm bằng cách chạm, hiệu ứng khi đúng ── */
+.stage .rows span{position:relative;cursor:pointer;border-radius:50%}
+.stage .rows span.counted{background:#c8f7d4}
+.stage .rows span.counted::after{content:attr(data-n);position:absolute;top:-6px;right:-8px;background:#3cb371;color:#fff;font-size:14px;font-weight:800;border-radius:10px;padding:0 6px;line-height:20px}
+.win .rows span,.win .big,.win .char{animation:jump .6s calc(var(--i,0)*70ms) both}
+@keyframes jump{40%{transform:translateY(-22px) scale(1.15)}}
+.tower i{animation:drop .45s calc(var(--i)*90ms) backwards}
+@keyframes drop{from{transform:translateY(-120px);opacity:0}}
+.story{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.char{font-size:80px;display:inline-block;animation:bob 2s infinite}
+.char.happy{animation:jump .5s 3}
+.char.sad{animation:tilt 1s}
+@keyframes tilt{30%,70%{transform:rotate(-14deg)}}
+.burst{position:fixed;z-index:22;pointer-events:none;font-size:26px;animation:burst .8s ease-out forwards}
+@keyframes burst{to{transform:translate(var(--dx),var(--dy)) scale(.4);opacity:0}}
+.gname{background:#fff;border-radius:14px;padding:3px 10px;font-size:15px;font-weight:700}
+/* ── Kéo thả ── */
+.piece{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;font-size:44px;background:#fff;border-radius:18px;box-shadow:0 4px 0 var(--sh);touch-action:none;cursor:grab;position:relative}
+.piece.dragging{z-index:30;transition:none;box-shadow:0 12px 20px #0003}
+.piece.back{animation:shake .4s}
+.pile{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding:10px;min-height:84px}
+.zones{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-bottom:10px}
+.zone{background:#fff3f8;border:4px dashed var(--sh);border-radius:24px;padding:8px;min-width:120px;min-height:120px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.zone .zl{font-size:56px;display:flex;flex-direction:column;align-items:center;line-height:1.1}.zone .zl small{font-size:15px;font-weight:800}
+.zone .slot{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}.zone .slot .piece{width:48px;height:48px;font-size:32px;cursor:default}
+.zone.hot{background:#c8f7d4}
+.basket{min-width:240px;min-height:170px;background:#fff3e0;border-color:#e0a060;position:relative}
+.basket .zl{font-size:22px;font-weight:900;background:#ff9ec7;color:#fff;border-radius:14px;padding:2px 14px}
+.basket .slot .piece{cursor:pointer}
+.dragwrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+/* ── Lật thẻ ── */
+.cards{display:inline-grid;gap:10px}
+.card{width:84px;height:96px;border-radius:18px;background:linear-gradient(135deg,#ff7eb3,#c77dff);color:#fff;font-size:40px;box-shadow:0 5px 0 #a855c7;display:flex;align-items:center;justify-content:center;transition:transform .25s}
+.card .face{display:none}.card.flip{background:#fff;color:var(--ink);transform:rotateY(180deg)}.card.flip .face{display:block;transform:rotateY(180deg)}.card.flip .back{display:none}
+.card.match{background:#c8f7d4;box-shadow:0 5px 0 #7fd39a}
+.card .num{font-size:46px}.rows.xs{font-size:15px;grid-template-columns:repeat(5,auto);gap:0}
+/* ── Mê cung ── */
+.maze{display:inline-grid;gap:6px}
+.mz{width:60px;height:60px;border-radius:14px;background:#fff3f8;font-size:26px;font-weight:900;box-shadow:0 4px 0 var(--sh);position:relative;display:flex;align-items:center;justify-content:center}
+.mz.walk{background:#c8f7d4;box-shadow:0 4px 0 #7fd39a}
+.mz .an{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:38px;background:#fff9;border-radius:14px;animation:popin .3s}
+.mz.home::after{content:'🏠';position:absolute;top:-14px;right:-10px;font-size:24px}
+/* ── Tô màu ── */
+.paint{display:inline-grid;gap:2px;background:#ccc;padding:2px;border-radius:10px}
+.px{width:40px;height:40px;background:#fff;font-size:16px;font-weight:800;color:#999;padding:0;border-radius:4px;transition:background .3s}
+.px.done{color:transparent}
+.pals{display:flex;justify-content:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.pal{width:62px;height:62px;border-radius:50%;font-size:26px;font-weight:900;color:#fff;text-shadow:0 2px 2px #0006;box-shadow:0 4px 0 #0002;border:4px solid #fff}
+.pal.sel{outline:5px solid #3b2f2f;transform:scale(1.12)}
+/* ── Cửa hàng nhỏ ── */
+.shopq{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}
+.tag{background:#ffd36e;border-radius:14px;padding:4px 14px;font-size:30px;font-weight:900}
+.tray{min-height:90px;min-width:240px;background:#fff3e0;border:4px dashed #e0a060;border-radius:22px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;padding:8px}
+.coin{width:56px;height:56px;border-radius:50%;background:radial-gradient(#ffe066,#f0b400);border:3px solid #c98f00;font-size:24px;font-weight:900;color:#7a5200;box-shadow:0 3px 0 #a87500}
+.coin.c2{background:radial-gradient(#e0e0e0,#a8a8a8);border-color:#888;color:#444;box-shadow:0 3px 0 #777}
+.coin.c5{background:radial-gradient(#ffc9a0,#e08040);border-color:#b05a20;color:#5a2a00;box-shadow:0 3px 0 #8a4010;width:64px;height:64px}
+/* ── Trùm cuối ── */
+.boss{display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,#4a2a6a,#8a3a8a);color:#fff;border-radius:22px;padding:8px 16px;margin-bottom:8px;font-weight:800;animation:popin .4s}
+.boss .bi{font-size:56px;animation:shake 1.2s infinite}
+.boss.beat .bi{animation:poof .8s forwards}
+@keyframes poof{50%{transform:scale(1.5) rotate(180deg)}to{transform:scale(0) rotate(360deg);opacity:0}}
+/* ── Thẻ sưu tầm, phòng, cửa hàng ── */
+.album{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+.stk{background:#fff;border-radius:18px;padding:8px 4px;text-align:center;font-size:13px;font-weight:800;box-shadow:0 4px 0 var(--sh);position:relative}
+.stk .ic{font-size:46px;display:block}
+.stk.no .ic{filter:brightness(0) opacity(.15)}.stk.no{color:#bbb}
+.stk .cnt{position:absolute;top:4px;right:6px;font-size:11px;background:#ff9ec7;color:#fff;border-radius:8px;padding:0 5px}
+.reveal{display:inline-block;background:linear-gradient(135deg,#fff3c4,#ffd6e8);border-radius:22px;padding:12px 22px;margin:10px;animation:spinin .9s}
+.reveal .ic{font-size:70px;display:block}
+@keyframes spinin{from{transform:rotateY(720deg) scale(.2)}}
+.room{position:relative;height:300px;border-radius:26px;overflow:hidden;background:linear-gradient(#ffe3ef 62%,#e8c4a0 62%);box-shadow:0 6px 0 var(--sh);margin-bottom:14px}
+.room .owl{position:absolute;left:50%;top:44%;transform:translateX(-50%);font-size:96px;animation:bob 2s infinite}
+.room .owl .hat{position:absolute;left:50%;top:-34px;transform:translateX(-50%);font-size:52px}
+.room .it{position:absolute;font-size:46px;animation:popin .4s backwards}
+.room .win{position:absolute;left:8%;top:10%;font-size:46px}
+.shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+.si{background:#fff;border-radius:20px;padding:10px;text-align:center;box-shadow:0 5px 0 var(--sh);font-weight:800;font-size:15px}
+.si .ic{font-size:46px;display:block}
+.si button{margin-top:6px;border-radius:12px;padding:6px 10px;font-weight:800;background:#ffd36e;font-size:15px}
+.si button.have{background:#c8f7d4}
+.tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{background:#fff;border-radius:16px;padding:8px 14px;font-weight:800;box-shadow:0 4px 0 var(--sh)}
+.tabs button.on{background:#ff9ec7;color:#fff}
+.heart{position:fixed;z-index:22;pointer-events:none;font-size:34px;animation:floatup 1.4s ease-out forwards}
+@keyframes floatup{to{transform:translateY(-140px) scale(1.4);opacity:0}}
+.mascot .hat{position:absolute;left:50%;top:-24px;transform:translateX(-50%);font-size:32px}
+.mascot.happy{animation:jump .5s 2}.mascot.sad{animation:tilt 1s}
+/* ── Bố mẹ ── */
+.modal{position:fixed;inset:0;background:#0006;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal .panel{max-width:380px;width:100%}
+.chart{display:flex;align-items:flex-end;gap:8px;height:160px;padding:8px;background:#fff3f8;border-radius:16px}
+.chart div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:12px;font-weight:700}
+.chart i{display:block;width:70%;background:linear-gradient(#ff7eb3,#c77dff);border-radius:8px 8px 0 0;min-height:2px}
+.acc{display:flex;align-items:center;gap:10px;margin:8px 0;font-weight:700}.acc .t{width:130px}.acc .b{flex:1;height:18px;background:#0001;border-radius:10px;overflow:hidden}.acc .b i{display:block;height:100%;border-radius:10px}
+.clip{display:flex;align-items:center;gap:8px;background:#fff3f8;border-radius:14px;padding:6px 10px;margin:6px 0}
+.rcd{font-size:56px;font-weight:900;color:#e0408a;margin:10px 0}
+@media (max-width:520px){.mz{width:50px;height:50px;font-size:22px}.px{width:34px;height:34px}.card{width:66px;height:80px;font-size:32px}.zone{min-width:96px;min-height:100px}.piece{width:56px;height:56px;font-size:38px}}
 </style>
 </head>
 <body>
@@ -149,300 +252,15 @@ input[type=text]{font:inherit;font-size:24px;padding:10px 16px;border-radius:16p
   <button class="who" onclick="showProfile()"><div class="av" id="hav"></div><b id="hname"></b></button>
   <div class="sp"></div>
   <span class="chip" title="Thời gian học hôm nay">⏱ <span id="htime">0'</span></span>
-  <span class="chip">⭐ <span id="hstar">0</span></span>
-  <button class="chip" onclick="showMedals()">🏅 <span id="hmed">0</span></button>
+  <span class="chip" title="Ngôi sao">⭐ <span id="hstar">0</span></span>
+  <button class="chip" title="Xu để mua đồ" onclick="showRoom()">🪙 <span id="hcoin">0</span></button>
   <button class="chip" id="hmusic" onclick="toggleMusic()">🎵</button>
 </header>
 <main id="app"></main>
-<div class="mascot" id="mascot" onclick="cheerUp()">🦉</div>
+<div class="mascot" id="mascot" onclick="cheerUp()"><span class="hat" id="mhat"></span>🦉</div>
 <div class="bubble" id="bubble"></div>
 <script src="nhac.js"></script>
 <script src="games.js"></script>
-<script>
-const app = document.getElementById('app'), $ = id => document.getElementById(id);
-
-// ───── Dữ liệu lưu trên máy ─────
-const today = () => new Date().toLocaleDateString('sv');
-let S = { profile: null, prog: {}, isles: {}, time: {}, medals: {}, music: true };
-try { Object.assign(S, JSON.parse(localStorage.getItem('btd') || '{}')); } catch (e) {}
-const save = () => { try { localStorage.setItem('btd', JSON.stringify(S)); } catch (e) {} };
-
-const catProg = c => S.prog[c] || (S.prog[c] = {});
-const passed = () => Object.values(S.prog).reduce((s, p) => s + Object.keys(p).length, 0);
-const totalStars = () => Object.values(S.prog).reduce((s, p) => s + Object.values(p).reduce((a, b) => a + b, 0), 0) + Object.keys(S.isles).length * 3;
-const threeStars = () => Object.values(S.prog).reduce((s, p) => s + Object.values(p).filter(x => x === 3).length, 0);
-const todaySecs = () => S.time[today()] || 0;
-const totalSecs = () => Object.values(S.time).reduce((a, b) => a + b, 0);
-function streak() { let n = 0, d = new Date(); while ((S.time[d.toLocaleDateString('sv')] || 0) >= 60) { n++; d.setDate(d.getDate() - 1); } return n; }
-const mins = s => s < 3600 ? Math.floor(s / 60) + ' phút' : Math.floor(s / 3600) + ' giờ ' + Math.floor(s % 3600 / 60) + ' phút';
-
-const MEDALS = [
-  ['m1', '🥉', 'Qua màn đầu tiên', () => passed() >= 1],
-  ['m10', '🥈', 'Qua 10 màn', () => passed() >= 10],
-  ['m50', '🥇', 'Qua 50 màn', () => passed() >= 50],
-  ['m150', '🏆', 'Qua 150 màn', () => passed() >= 150],
-  ['s3', '🌟', 'Màn 3 sao đầu tiên', () => threeStars() >= 1],
-  ['s10', '💫', '10 màn 3 sao', () => threeStars() >= 10],
-  ['st100', '⭐', 'Gom 100 ngôi sao', () => totalStars() >= 100],
-  ['all', '🌈', 'Chơi đủ 6 chủ đề', () => CATS.every((c, i) => Object.keys(catProg(i)).length > 0)],
-  ['cat', '👑', 'Hoàn thành 1 chủ đề', () => CATS.some((c, i) => Object.keys(catProg(i)).length >= 50)],
-  ['i1', '🏝️', 'Chinh phục hòn đảo đầu', () => Object.keys(S.isles).length >= 1],
-  ['i10', '🗺️', 'Chinh phục cả 10 đảo', () => Object.keys(S.isles).length >= 10],
-  ['t15', '⏰', 'Học 15 phút trong ngày', () => todaySecs() >= 900],
-  ['t60', '📚', 'Tổng cộng 1 giờ học', () => totalSecs() >= 3600],
-  ['d3', '🔥', 'Học 3 ngày liền', () => streak() >= 3],
-];
-function checkMedals() {
-  const got = [];
-  for (const [id, ic, name, test] of MEDALS) if (!S.medals[id] && test()) { S.medals[id] = today(); got.push([ic, name]); }
-  if (got.length) { save(); refreshHead(); setTimeout(() => { toast(got[0][0], 'Huy chương mới!<br>' + got[0][1]); say('huychuong'); confetti(40); }, 900); }
-}
-
-// ───── Thanh trên ─────
-const avHTML = a => a && a.startsWith('data:') ? `<img src="${a}" alt="">` : (a || '🐣');
-function refreshHead() {
-  $('hav').innerHTML = avHTML(S.profile && S.profile.avatar);
-  $('hname').textContent = (S.profile && S.profile.name) || 'Bé';
-  $('htime').textContent = Math.floor(todaySecs() / 60) + "'";
-  $('hstar').textContent = totalStars();
-  $('hmed').textContent = Object.keys(S.medals).length;
-  $('hmusic').textContent = S.music ? '🎵' : '🔇';
-}
-function setBack(fn) { const b = $('back'); b.style.visibility = fn ? 'visible' : 'hidden'; b.onclick = fn; }
-
-// ───── Đồng hồ học: chỉ tính khi bé đang làm bài và màn hình đang mở ─────
-let studying = false, tick = 0;
-setInterval(() => {
-  if (!studying || document.visibilityState !== 'visible') return;
-  S.time[today()] = todaySecs() + 1;
-  if (++tick % 10 === 0) { save(); refreshHead(); }
-  if (tick % 60 === 0) checkMedals();
-}, 1000);
-
-// ───── Âm thanh ─────
-let voice = new Audio(), vq = [];
-function say(k) {
-  vq = Array.isArray(k) ? [...k] : [k];
-  voice.pause(); playNext();
-}
-function playNext() {
-  const k = vq.shift(); if (!k) { duck(false); return; }
-  voice = new Audio('giong/' + k + '.mp3'); voice.onended = playNext; duck(true);
-  voice.play().catch(() => duck(false));
-}
-function duck(on) { if (window.NhacNen && S.music) NhacNen.setVolume(on ? .08 : .22); }
-function beep(ok) {
-  try { const c = NhacNen.getCtx(), t = c.currentTime;
-    (ok ? [660, 880, 1320] : [220, 180]).forEach((f, i) => { const o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.value = f; o.connect(g); g.connect(c.destination);
-      g.gain.setValueAtTime(.12, t + i * .09); g.gain.exponentialRampToValueAtTime(.001, t + i * .09 + .25); o.start(t + i * .09); o.stop(t + i * .09 + .3); });
-  } catch (e) {}
-}
-let musicOn = false;
-function startMusic() { if (S.music && !musicOn && window.NhacNen) { NhacNen.start('sangtao'); NhacNen.setVolume(.22); musicOn = true; } }
-function toggleMusic() { S.music = !S.music; save(); refreshHead(); if (S.music) { musicOn = false; startMusic(); } else { NhacNen.stop(); musicOn = false; } }
-// Trình duyệt chỉ cho phát nhạc sau lần chạm đầu tiên
-addEventListener('pointerdown', startMusic, { once: false });
-
-// ───── Hiệu ứng ─────
-function confetti(n = 24) {
-  for (let i = 0; i < n; i++) {
-    const s = document.createElement('span'); s.className = 'confetti';
-    s.textContent = pick(['🎉', '⭐', '🎈', '💖', '✨', '🌟', '🍬']);
-    s.style.left = R(100) + 'vw'; s.style.animationDelay = (Math.random() * .5) + 's'; s.style.fontSize = 20 + R(24) + 'px';
-    document.body.appendChild(s); setTimeout(() => s.remove(), 2600);
-  }
-}
-function toast(ic, html, ms = 2200) { const t = document.createElement('div'); t.className = 'toast'; t.innerHTML = `<span class="ic">${ic}</span>${html}`; document.body.appendChild(t); setTimeout(() => t.remove(), ms); }
-let bubT;
-function talk(txt) { const b = $('bubble'); b.textContent = txt; b.classList.add('show'); clearTimeout(bubT); bubT = setTimeout(() => b.classList.remove('show'), 2200); }
-function cheerUp() { talk(pick(['Bé giỏi lắm! 💪', 'Cố lên nào! 🌟', 'Mình cùng học nhé! 📚', 'Yêu bé nhiều! 💖'])); }
-(function decorate() {
-  const bg = $('bg'), add = (cls, txt, css) => { const s = document.createElement('span'); s.className = cls; s.textContent = txt; Object.assign(s.style, css); bg.appendChild(s); };
-  [8, 22, 40, 60].forEach((top, i) => add('cloud', '☁️', { top: top + '%', animationDuration: 40 + i * 12 + 's', animationDelay: -i * 11 + 's' }));
-  ['🎈', '🎈', '🪁', '🎈'].forEach((t, i) => add('balloon', t, { left: 6 + i * 26 + '%', animationDuration: 18 + i * 5 + 's', animationDelay: -i * 6 + 's' }));
-  for (let i = 0; i < 10; i++) add('twinkle', pick(['✨', '⭐', '💫']), { left: R(96) + '%', top: R(80) + '%', animationDelay: Math.random() * 2.4 + 's' });
-})();
-
-// ───── Hồ sơ của bé ─────
-const AVATARS = ['🐣', '🐰', '🐻', '🐼', '🦊', '🐱', '🐶', '🐯', '🦁', '🐸', '🐵', '🦄', '🐧', '🐨', '👧', '👦'];
-let draftAv;
-function showProfile(first) {
-  studying = false; setBack(first ? null : home);
-  const p = S.profile || { name: '', avatar: '🐣' }; draftAv = p.avatar;
-  app.innerHTML = `<div class="title">${first ? '👋 Chào bé! Bé tên là gì?' : '👤 Hồ sơ của bé'}</div>
-  <div class="panel" style="text-align:center">
-    <div class="av avbig" id="pav">${avHTML(draftAv)}</div>
-    <input type="text" id="pname" maxlength="20" placeholder="Nhập tên bé" value="${(p.name || '').replace(/"/g, '&quot;')}">
-    <div class="small" style="margin-top:12px">Chọn ảnh đại diện</div>
-    <div class="avs">${AVATARS.map(a => `<button onclick="pickAv('${a}')">${a}</button>`).join('')}</div>
-    <label class="btn alt" style="display:inline-block">📷 Dùng ảnh của bé<input type="file" accept="image/*" hidden onchange="upAv(this)"></label>
-    <button class="btn" onclick="saveProfile()">✅ Lưu</button>
-  </div>
-  ${first ? '' : `<div class="panel"><div class="title" style="font-size:22px">📊 Thành tích</div><div class="stats">
-    <div>Hôm nay học<b>${mins(todaySecs())}</b></div><div>Tổng thời gian<b>${mins(totalSecs())}</b></div>
-    <div>Học liền<b>${streak()} ngày 🔥</b></div><div>Màn đã qua<b>${passed()}</b></div>
-    <div>Ngôi sao<b>${totalStars()} ⭐</b></div><div>Huy chương<b>${Object.keys(S.medals).length}/${MEDALS.length} 🏅</b></div>
-    <div>Đảo chinh phục<b>${Object.keys(S.isles).length}/10 🏝️</b></div></div></div>`}`;
-}
-function pickAv(a) { draftAv = a; $('pav').innerHTML = avHTML(a); }
-function upAv(inp) {
-  const f = inp.files[0]; if (!f) return;
-  const img = new Image(); img.onload = () => {
-    const c = document.createElement('canvas'); c.width = c.height = 200; const s = Math.min(img.width, img.height);
-    c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 200, 200);
-    pickAv(c.toDataURL('image/jpeg', .85)); URL.revokeObjectURL(img.src);
-  }; img.src = URL.createObjectURL(f);
-}
-function saveProfile() { S.profile = { name: $('pname').value.trim() || 'Bé', avatar: draftAv }; save(); refreshHead(); say('chao'); home(); }
-
-// ───── Trang chủ ─────
-function home() {
-  studying = false; setBack(null);
-  const won = Object.keys(S.isles).length;
-  app.innerHTML = `<div class="brand"><img src="icon-192.png" alt="">Toán Tư Duy</div><div class="title">Chào ${S.profile.name}! Hôm nay học gì nào? 👇</div>
-  ${installBox()}
-  <button class="bigbtn" onclick="showIsles()"><span class="ic">🗺️</span><span style="text-align:left">Chinh phục 10 hòn đảo<br><span style="font-size:16px;font-weight:600">Đã chinh phục ${won}/10 đảo 🏝️</span></span></button>
-  <div class="menu">${CATS.map((c, i) => { const n = Object.keys(catProg(i)).length;
-    return `<button class="tile" style="background:${c.color};animation-delay:${i * .07}s" onclick="showLevels(${i})"><span class="deco">${c.deco}</span><span class="ic">${c.icon}</span>${c.name}<div class="pbar"><i style="width:${n * 2}%"></i></div><span class="small">${n}/50 màn</span></button>`; }).join('')}</div>`;
-}
-
-// ───── Cài ứng dụng lên điện thoại ─────
-let installEvt = null;
-addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if ($('instbox')) $('instbox').outerHTML = installBox(); });
-addEventListener('appinstalled', () => { installEvt = null; const b = $('instbox'); if (b) b.remove(); toast('📲', 'Đã cài xong! Tìm biểu tượng số 10 trên màn hình nhé.'); });
-const standalone = () => matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches || navigator.standalone;
-// Trình duyệt dựng sẵn trong Zalo, Facebook, Messenger… không cho cài ứng dụng
-const inApp = () => /Zalo|FBAN|FBAV|FB_IAV|Instagram|Line\/|TikTok|; wv\)/i.test(navigator.userAgent);
-const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
-function installBox() {
-  if (standalone()) return '';
-  const url = location.href.replace(/^https:\/\//, '');
-  let body;
-  if (inApp() && /Android/i.test(navigator.userAgent))
-    body = `Bạn đang mở trong Zalo/Facebook nên chưa cài được.<br><a class="btn" href="intent://${url}#Intent;scheme=https;package=com.android.chrome;end">🌐 Mở bằng Chrome</a>`;
-  else if (inApp())
-    body = 'Bạn đang mở trong Zalo/Facebook. Bấm dấu ⋯ góc trên → <b>Mở bằng trình duyệt</b> (Safari) rồi cài.';
-  else if (installEvt)
-    body = `<button class="btn" onclick="doInstall()">📲 Cài ứng dụng</button>`;
-  else if (isIOS())
-    body = 'Bấm nút <b>Chia sẻ</b> (ô vuông có mũi tên ⬆️) → <b>Thêm vào MH chính</b>.';
-  else
-    body = 'Bấm dấu <b>⋮</b> góc trên bên phải Chrome → <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào màn hình chính</b>.';
-  return `<div class="panel install" id="instbox"><img src="icon-192.png" alt=""><div>Cài <b>Toán Tư Duy</b> lên máy để bé mở nhanh, không cần mạng<br>${body}</div></div>`;
-}
-async function doInstall() { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt = null; }
-
-// ───── Bản đồ 50 màn ─────
-function showLevels(ci) {
-  studying = false; setBack(home);
-  const c = CATS[ci], p = catProg(ci), open = Object.keys(p).length + 1;
-  app.innerHTML = `<div class="title">${c.icon} ${c.name} <span class="small">· ${Object.values(p).reduce((a, b) => a + b, 0)} ⭐</span></div>
-  <div class="levels">${range(1, 50).map(L => { const st = p[L];
-    if (L > open) return `<button class="lv lock" disabled>🔒</button>`;
-    return `<button class="lv ${L === open ? 'now' : ''}" style="background:${st ? c.color : ''};animation-delay:${Math.min(L, 20) * .02}s" onclick="playLevel(${ci},${L})">${L}<small>${st ? '⭐'.repeat(st) : ''}</small></button>`; }).join('')}</div>`;
-  say(c.v);
-}
-
-// ───── Chơi một lượt 10 câu (dùng chung cho màn và đảo) ─────
-let run;
-function makeQuestions(gameKeys, L) {
-  let pool = [];
-  while (pool.length < 10) pool.push(...shuffle(gameKeys));
-  return pool.slice(0, 10).map(k => GAMES[k].make(L));
-}
-function playLevel(ci, L) {
-  run = { mode: 'level', ci, L, qs: makeQuestions(CATS[ci].games, L), i: 0, right: 0 };
-  setBack(() => showLevels(ci)); studying = true; showQ();
-}
-function playIsle(ii) {
-  const all = CATS.flatMap(c => c.games);
-  run = { mode: 'isle', ii, L: ISLANDS[ii].L, qs: makeQuestions(all, ISLANDS[ii].L), i: 0, right: 0, hearts: 3 };
-  setBack(showIsles); studying = true; say('chinhphuc'); setTimeout(showQ, 50);
-}
-function showQ() {
-  const it = run.qs[run.i]; let wrong = 0, locked = false;
-  const head = run.mode === 'isle'
-    ? `<div class="path">${range(0, 9).map(i => `<span class="stone ${i < run.i ? 'done' : ''}">${i === run.i ? `<span class="me av">${avHTML(S.profile.avatar)}</span>` : ''}</span>`).join('')}<span style="font-size:34px">🎁</span></div>
-       <div class="qhead"><span class="hearts">${'❤️'.repeat(run.hearts)}${'🤍'.repeat(3 - run.hearts)}</span><span class="sp"></span><b>${ISLANDS[run.ii].icon} ${ISLANDS[run.ii].name}</b></div>`
-    : `<div class="qhead"><b>Màn ${run.L}</b><div class="qbar"><i style="width:${run.i * 10}%"></i></div><b>${run.i + 1}/10</b></div>`;
-  const grid = it.layout === 'grid';
-  app.innerHTML = head + `<div class="q"><button class="speak" id="sp">🔊</button><span>${it.q}</span></div>
-    ${grid ? `<div class="stage"><div class="pair">${it.html}<div class="grid" id="opts" style="grid-template-columns:repeat(${it.cols},1fr)"></div></div></div>`
-           : `${it.html ? `<div class="stage">${it.html}</div>` : ''}<div class="opts ${it.layout || ''}" id="opts"></div>`}`;
-  $('sp').onclick = () => say(it.v); setTimeout(() => say(it.v), 250);
-  const btns = it.opts.map((o, idx) => {
-    const b = document.createElement('button'); b.className = grid ? 'cell' : 'opt'; b.innerHTML = o.label;
-    if (!grid) b.style.animationDelay = idx * .07 + 's';
-    b.onclick = () => {
-      if (locked) return;
-      if (o.say && !o.ok) say(o.say);
-      if (o.ok) {
-        locked = true; b.classList.add('ok'); beep(1); confetti(); if (!wrong) run.right++;
-        talk(pick(['Giỏi quá! 🎉', 'Đúng rồi! 🌟', 'Tuyệt vời! 👏', 'Bé thật thông minh! 🧠']));
-        setTimeout(() => say(o.say ? [o.say, 'ok' + R(3)] : 'ok' + R(3)), 150);
-        setTimeout(() => { run.i++; run.i >= 10 ? finish() : showQ(); }, 1700);
-      } else {
-        wrong++; b.classList.add('bad'); beep(0);
-        setTimeout(() => b.classList.remove('bad'), 450);
-        if (run.mode === 'isle' && wrong === 1) {
-          run.hearts--; showHearts();
-          if (run.hearts <= 0) { locked = true; setTimeout(() => finish(true), 900); return; }
-          setTimeout(() => say('mattim'), 400);
-        } else setTimeout(() => say('sai'), 400);
-        talk('Thử lại nhé! 💪');
-        if (wrong >= 2) btns.find((x, j) => it.opts[j].ok).classList.add('hint');
-      }
-    };
-    $('opts').appendChild(b); return b;
-  });
-}
-function showHearts() { const h = document.querySelector('.hearts'); if (h) h.textContent = '❤️'.repeat(run.hearts) + '🤍'.repeat(3 - run.hearts); }
-
-function finish(lost) {
-  studying = false; save();
-  const st = run.right >= 9 ? 3 : run.right >= 6 ? 2 : 1;
-  if (run.mode === 'level') {
-    const p = catProg(run.ci); p[run.L] = Math.max(p[run.L] || 0, st); save();
-    app.innerHTML = `<div class="done panel"><div class="big">🏆</div>Hoàn thành màn ${run.L}!<br>Bé làm đúng ngay ${run.right}/10 câu
-      <div class="starrow">${range(1, 3).map(i => `<span style="animation-delay:${i * .3}s">${i <= st ? '⭐' : '☆'}</span>`).join('')}</div>
-      ${run.L < 50 ? `<button class="btn" onclick="playLevel(${run.ci},${run.L + 1})">Màn tiếp ▶️</button>` : ''}
-      <button class="btn alt" onclick="playLevel(${run.ci},${run.L})">🔁 Chơi lại</button><button class="btn alt" onclick="showLevels(${run.ci})">🗺️ Chọn màn</button></div>`;
-    say('sao' + st); confetti(50);
-  } else if (lost) {
-    app.innerHTML = `<div class="done panel"><div class="big">🥺</div>Hết trái tim rồi!<br>Mình thử lại nhé, bé sẽ làm được!<br>
-      <button class="btn" onclick="playIsle(${run.ii})">🔁 Thử lại</button><button class="btn alt" onclick="showIsles()">🗺️ Bản đồ đảo</button></div>`;
-    say('thua');
-  } else {
-    const I = ISLANDS[run.ii]; S.isles[run.ii] = 1; save();
-    app.innerHTML = `<div class="done panel"><div class="big">${I.prize}</div>Bé đã chinh phục ${I.name}!<br>Nhận kho báu ${I.prize}
-      <div class="starrow">${'❤️'.repeat(run.hearts)}</div>
-      ${run.ii < 9 ? `<button class="btn" onclick="playIsle(${run.ii + 1})">Đảo tiếp theo ⛵</button>` : ''}<button class="btn alt" onclick="showIsles()">🗺️ Bản đồ đảo</button></div>`;
-    say('thang'); confetti(70);
-  }
-  refreshHead(); checkMedals();
-}
-
-// ───── Bản đồ chinh phục ─────
-function showIsles() {
-  studying = false; setBack(home);
-  const open = Object.keys(S.isles).length;
-  app.innerHTML = `<div class="title">🗺️ Chinh phục 10 hòn đảo ⛵</div><div class="small" style="text-align:center;margin-bottom:12px">Mỗi đảo 10 câu trộn mọi chủ đề · Có 3 trái tim ❤️ · Trả lời sai mất 1 tim</div>
-  <div class="isles">${ISLANDS.map((I, i) => { const won = S.isles[i], lock = i > open;
-    return `<button class="isle ${won ? 'won' : ''} ${lock ? 'lock' : ''}" style="animation-delay:${i * .06}s" ${lock ? 'disabled' : `onclick="playIsle(${i})"`}>
-      <span class="ic">${lock ? '🔒' : I.icon}</span><span style="flex:1;text-align:left">${I.name}<br><span class="small">${won ? 'Đã có kho báu ' + I.prize : lock ? 'Chưa mở' : 'Bấm để chinh phục!'}</span></span>${won ? '🚩' : ''}</button>`; }).join('')}</div>`;
-  say('chondao');
-}
-
-// ───── Huy chương ─────
-function showMedals() {
-  studying = false; setBack(home);
-  app.innerHTML = `<div class="title">🏅 Huy chương của ${S.profile.name}</div><div class="medals">${MEDALS.map(([id, ic, name]) =>
-    `<div class="medal ${S.medals[id] ? '' : 'lock'}"><span class="ic">${ic}</span>${name}${S.medals[id] ? '' : '<br>🔒'}</div>`).join('')}</div>`;
-}
-
-refreshHead();
-S.profile ? home() : showProfile(true);
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
-</script>
+<script src="app.js"></script>
 </body>
 </html>
