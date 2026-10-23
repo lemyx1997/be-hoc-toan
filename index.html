@@ -182,11 +182,15 @@ input[type=text]{font:inherit;font-size:24px;padding:10px 16px;border-radius:16p
 .card.match{background:#c8f7d4;box-shadow:0 5px 0 #7fd39a}
 .card .num{font-size:46px}.rows.xs{font-size:15px;grid-template-columns:repeat(5,auto);gap:0}
 /* ── Mê cung ── */
-.maze{display:inline-grid;gap:6px}
-.mz{width:60px;height:60px;border-radius:14px;background:#fff3f8;font-size:26px;font-weight:900;box-shadow:0 4px 0 var(--sh);position:relative;display:flex;align-items:center;justify-content:center}
-.mz.walk{background:#c8f7d4;box-shadow:0 4px 0 #7fd39a}
-.mz .an{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:38px;background:#fff9;border-radius:14px;animation:popin .3s}
-.mz.home::after{content:'🏠';position:absolute;top:-14px;right:-10px;font-size:24px}
+/* Ô tự co giãn: vừa khít bề ngang màn hình điện thoại, to tối đa 104px trên máy tính bảng */
+.stage.mazest{padding:12px}
+.maze{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:clamp(5px,1.6vw,10px);width:min(100%,calc(var(--n) * 104px));margin:0 auto}
+.mz{aspect-ratio:1;width:100%;border-radius:18%;background:#fff3f8;font-size:clamp(26px,8vw,46px);font-weight:900;box-shadow:0 5px 0 var(--sh);position:relative;display:flex;align-items:center;justify-content:center;padding:0;touch-action:manipulation}
+.mz:active{transform:scale(.94)}
+.mz.walk{background:#c8f7d4;box-shadow:0 5px 0 #7fd39a}
+.mz .an{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(34px,11vw,64px);background:#fffc;border-radius:18%;animation:popin .3s}
+.mz.home{background:#ffe3ef;outline:4px dashed #ff9ec7;outline-offset:-4px}
+.mz .hm{position:absolute;top:-16%;right:-14%;font-size:clamp(22px,7vw,40px);animation:bob 1.6s infinite}
 /* ── Tô màu ── */
 .paint{display:inline-grid;gap:2px;background:#ccc;padding:2px;border-radius:10px}
 .px{width:40px;height:40px;background:#fff;font-size:16px;font-weight:800;color:#999;padding:0;border-radius:4px;transition:background .3s}
@@ -241,7 +245,7 @@ input[type=text]{font:inherit;font-size:24px;padding:10px 16px;border-radius:16p
 .acc{display:flex;align-items:center;gap:10px;margin:8px 0;font-weight:700}.acc .t{width:130px}.acc .b{flex:1;height:18px;background:#0001;border-radius:10px;overflow:hidden}.acc .b i{display:block;height:100%;border-radius:10px}
 .clip{display:flex;align-items:center;gap:8px;background:#fff3f8;border-radius:14px;padding:6px 10px;margin:6px 0}
 .rcd{font-size:56px;font-weight:900;color:#e0408a;margin:10px 0}
-@media (max-width:520px){.mz{width:50px;height:50px;font-size:22px}.px{width:34px;height:34px}.card{width:66px;height:80px;font-size:32px}.zone{min-width:96px;min-height:100px}.piece{width:56px;height:56px;font-size:38px}}
+@media (max-width:520px){main{padding-left:10px;padding-right:10px}.px{width:34px;height:34px}.card{width:66px;height:80px;font-size:32px}.zone{min-width:96px;min-height:100px}.piece{width:56px;height:56px;font-size:38px}}
 </style>
 </head>
 <body>

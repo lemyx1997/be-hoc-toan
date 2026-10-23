@@ -446,11 +446,12 @@ const RENDER = {
     });
   },
   maze(it, body, ctx) {
-    body.innerHTML = `<div class="stage"><div class="maze" id="maze" style="grid-template-columns:repeat(${it.size},auto)"></div></div>`;
+    body.innerHTML = `<div class="stage mazest"><div class="maze" id="maze" style="--n:${it.size}"></div></div>`;
     let cur = 0;
     const btns = it.cells.map((c, i) => {
       const b = document.createElement('button'); b.className = 'mz' + (c.path === it.N - 1 ? ' home' : '') + (c.path === 0 ? ' walk' : '');
       b.innerHTML = c.v == null ? '🌳' : c.v; if (c.path === 0) b.innerHTML += `<span class="an">${it.animal}</span>`;
+      if (c.path === it.N - 1) b.innerHTML += '<span class="hm">🏠</span>';
       b.onclick = () => {
         if (ctx.st.done || c.path === 0 || b.classList.contains('walk')) return;
         if (c.path === cur + 1) {

@@ -286,7 +286,8 @@ Object.assign(GAMES, {
   } },
   // Mê cung số: đi 1 → 2 → 3… tới nhà
   mecung: { name: 'Mê cung số', icon: '🌀', special: 1, make(L) {
-    const size = L < 20 ? 4 : 5, N = Math.min(10, 4 + Math.floor(L / 8));
+    // N ô trên đường đi: 0 (con vật) → N-1 (nhà); màn đầu đi đến 4, màn cuối đi đến 10
+    const size = L < 20 ? 4 : 5, N = Math.min(11, 5 + Math.floor(L / 8));
     let path = null;
     for (let t = 0; t < 300 && !path; t++) {
       const p = [[R(size), R(size)]], seen = new Set([p[0] + '']);
@@ -298,15 +299,16 @@ Object.assign(GAMES, {
       if (p.length === N) path = p;
     }
     const cells = Array.from({ length: size * size }, () => ({ v: null, path: -1 }));
-    path.forEach(([r, c], i) => { cells[r * size + c] = { v: i + 1, path: i }; });
+    // Con vật đứng ở ô số 0; bé bấm 1, 2, 3… đến ô cuối là nhà
+    path.forEach(([r, c], i) => { cells[r * size + c] = { v: i, path: i }; });
     // Ô phụ: không được tạo ra lối đi sai (không đặt số "kế tiếp" cạnh đường đi)
     cells.forEach((cell, idx) => {
       if (cell.path >= 0) return;
       const r = Math.floor(idx / size), c = idx % size, bad = new Set();
       [[r + 1, c], [r - 1, c], [r, c + 1], [r, c - 1]].forEach(([a, b]) => { if (a >= 0 && b >= 0 && a < size && b < size) { const n = cells[a * size + b]; if (n.path >= 0) bad.add(n.v + 1); } });
-      const ok = range(1, N).filter(x => !bad.has(x)); cell.v = ok.length && Math.random() < .8 ? pick(ok) : null;
+      const ok = range(1, N - 1).filter(x => !bad.has(x)); cell.v = ok.length && Math.random() < .8 ? pick(ok) : null;
     });
-    return { kind: 'maze', q: 'Đi theo số 1, 2, 3… đưa bạn về nhà nhé!', v: 'mecung', size, N, cells, animal: pick(ANIMALS) };
+    return { kind: 'maze', q: 'Bấm lần lượt 1, 2, 3… để đưa bạn về nhà nhé!', v: 'mecung', size, N, cells, animal: pick(ANIMALS) };
   } },
   // Tô màu theo số
   tomau: { name: 'Tô màu theo số', icon: '🖍️', special: 1, make(L) {
