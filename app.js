@@ -46,7 +46,7 @@ const MEDALS = [
 function checkMedals() {
   const got = [];
   for (const [id, ic, name, test] of MEDALS) if (!K.medals[id] && test()) { K.medals[id] = today(); got.push([ic, name]); }
-  if (got.length) { save(); setTimeout(() => { toast(got[0][0], 'Huy chương mới!<br>' + got[0][1]); say('huychuong'); confetti(40); }, 1200); }
+  if (got.length) { save(); sleep(1200).then(waitIdle).then(() => { toast(got[0][0], 'Huy chương mới!<br>' + got[0][1]); say('huychuong'); confetti(40); }); }
 }
 
 // ───── Thanh trên ─────
@@ -88,12 +88,23 @@ function showRest() {
 }
 
 // ───── Âm thanh: giọng đọc thu sẵn, giọng bố mẹ, nhạc nền ─────
-let voice = new Audio(), vq = [];
-function say(k) { vq = (Array.isArray(k) ? k : [k]).filter(Boolean); voice.pause(); playNext(); }
+// say() trả về một lời hứa: xong khi đã đọc hết (hoặc bị câu khác chen ngang)
+let voice = new Audio(), vq = [], voiceDone = null;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function say(k) {
+  vq = (Array.isArray(k) ? k : [k]).filter(Boolean); voice.pause();
+  if (voiceDone) voiceDone();
+  return new Promise(res => { voiceDone = res; playNext(); });
+}
+// Chờ đến khi máy đọc xong câu đang đọc (tối đa 10 giây)
+async function waitIdle() { for (let t = 0; voiceDone && t < 50; t++) await sleep(200); }
 function playNext() {
-  const k = vq.shift(); if (!k) { duck(false); return; }
-  voice = new Audio(k.startsWith('blob:') ? k : 'giong/' + k + '.mp3'); voice.onended = playNext; duck(true);
-  voice.play().catch(() => duck(false));
+  const k = vq.shift();
+  if (!k) { duck(false); const d = voiceDone; voiceDone = null; if (d) d(); return; }
+  const a = voice = new Audio(k.startsWith('blob:') ? k : 'giong/' + k + '.mp3'); duck(true);
+  const next = () => { if (a === voice) playNext(); };
+  a.onended = next; a.onerror = next;
+  a.play().catch(next);
 }
 function duck(on) { if (window.NhacNen && DB.music) NhacNen.setVolume(on ? .08 : .22); }
 function beep(ok, soft) {
@@ -270,7 +281,7 @@ function playIsle(ii) {
   const qs = makeQuestions(all, I.L), plain = all.filter(k => !GAMES[k].special), bk = pick(plain);
   qs[9] = Object.assign(GAMES[bk].make(I.L), { key: bk, boss: true }); // câu 10: trùm cuối
   run = { mode: 'isle', ii, L: I.L, qs, i: 0, right: 0, hearts: 3 };
-  setBack(showIsles); studying = true; say('chinhphuc'); setTimeout(showQ, 50);
+  run.intro = 'chinhphuc'; setBack(showIsles); studying = true; showQ();
 }
 function noteStat(key, ok) { const s = K.stats[key] || (K.stats[key] = { n: 0, ok: 0 }); s.n++; if (ok) s.ok++; }
 
@@ -286,7 +297,9 @@ function showQ() {
     <div style="text-align:center;margin:-8px 0 10px"><span class="gname">${GAMES[it.key].icon} ${GAMES[it.key].name}</span></div><div id="body"></div>`;
   showHearts();
   $('sp').onclick = () => say(it.v);
-  setTimeout(() => say(it.boss ? ['trum', it.v] : it.v), 250);
+  // Lời giới thiệu (vào đảo, gặp trùm) đọc liền trước câu hỏi, không bị cắt
+  const intro = run.intro; run.intro = null;
+  setTimeout(() => say([intro, it.boss ? 'trum' : null, ...[].concat(it.v)]), 250);
   const ctx = {
     st,
     wrong() {
@@ -304,12 +317,17 @@ function showQ() {
       noteStat(it.key, !st.wrong); if (!st.wrong) run.right++;
       const stage = app.querySelector('.stage'); if (stage) stage.classList.add('win');
       talk(pick(['Giỏi quá! 🎉', 'Đúng rồi! 🌟', 'Tuyệt vời! 👏', 'Bé thật thông minh! 🧠']));
-      let wait = 1800;
+      // Đợi đọc xong lời khen rồi mới sang câu mới (tối đa 10 giây phòng khi âm thanh bị kẹt)
+      const myRun = run, myI = run.i, t0 = Date.now();
+      let spoken;
       if (it.boss) {
-        wait = 3000; $('boss').classList.add('beat'); K.rescued[run.ii] = 1;
-        setTimeout(() => { toast(I.friend, 'Bé đã giải cứu bạn!', 1600); say('cuu'); confetti(40); }, 700);
-      } else setTimeout(() => say([sayKey, praiseKey()]), 150);
-      setTimeout(() => { run.i++; run.i >= 10 ? finish() : showQ(); }, wait);
+        $('boss').classList.add('beat'); K.rescued[run.ii] = 1;
+        spoken = sleep(700).then(() => { toast(I.friend, 'Bé đã giải cứu bạn!', 2200); confetti(40); return say('cuu'); });
+      } else spoken = sleep(150).then(() => say([sayKey, praiseKey()]));
+      Promise.race([spoken, sleep(10000)]).then(() => setTimeout(() => {
+        if (run !== myRun || run.i !== myI || !$('body')) return; // bé đã bấm quay lại
+        run.i++; run.i >= 10 ? finish() : showQ();
+      }, Math.max(400, 1500 - (Date.now() - t0))));
     },
   };
   (RENDER[it.kind] || renderChoice)(it, $('body'), ctx);
