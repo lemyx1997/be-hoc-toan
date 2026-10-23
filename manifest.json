@@ -1,0 +1,16 @@
+{
+  "name": "Bé Học Toán Tư Duy",
+  "short_name": "Toán Tư Duy",
+  "description": "Học toán tư duy cho bé 4-5 tuổi: 6 chủ đề, 300 màn, chinh phục 10 hòn đảo",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#fff7e6",
+  "theme_color": "#ffd36e",
+  "lang": "vi",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
