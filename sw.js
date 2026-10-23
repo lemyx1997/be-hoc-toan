@@ -1,5 +1,5 @@
 // Giúp ứng dụng mở được khi không có mạng: lưu sẵn toàn bộ app và giọng đọc ngay lần đầu.
-const CORE = 'toan-tu-duy-v2';
+const CORE = 'toan-tu-duy-v3';
 const VOICES = ['menu', 'chao', 'chonman', 'chondao', 'chinhphuc', 'mattim', 'thang', 'thua', 'sai', 'huychuong', 'ok0', 'ok1', 'ok2', 'sao1', 'sao2', 'sao3',
   'cat0', 'cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'dem', 'nhieu', 'it', 'timnhom', 'sothieu', 'solon', 'sobe', 'gop', 'bot', 'tach', 'domino', 'chimden', 'baydi',
   'dai', 'ngan', 'to', 'nho', 'cao', 'thap', 'nang', 'nhe', 'h0', 'h1', 'h2', 'h3', 'h4', 'h5', 'dh0', 'dh1', 'dh2', 'dh3', 'dh4', 'dh5', 'giong', 'vathinh',

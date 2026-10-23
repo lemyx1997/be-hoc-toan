@@ -37,6 +37,8 @@ main{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:16px 16px
 .title{font-size:26px;font-weight:800;text-align:center;margin:6px 0 14px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;justify-content:center;gap:10px;font-size:32px;font-weight:900;color:#e0408a;text-shadow:0 3px 0 #fff;animation:popin .5s}
 .brand img{width:56px;height:56px;border-radius:16px;box-shadow:0 4px 0 #e57aa8;animation:bob 2.4s infinite}
+.install{display:flex;align-items:center;gap:12px;font-size:16px;font-weight:600;padding:12px 14px;border:3px dashed #ff9ec7}
+.install img{width:56px;height:56px;border-radius:14px;flex:none}.install .btn{display:inline-block;text-decoration:none;font-size:18px;padding:8px 16px;margin:8px 0 0}
 /* ── Ô chủ đề ── */
 .menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
 .tile{position:relative;background:var(--card);border-radius:26px;padding:16px 10px 12px;font-size:19px;font-weight:800;box-shadow:0 6px 0 var(--sh);display:flex;flex-direction:column;align-items:center;gap:6px;animation:popin .45s backwards;transition:transform .15s}
@@ -298,10 +300,37 @@ function home() {
   studying = false; setBack(null);
   const won = Object.keys(S.isles).length;
   app.innerHTML = `<div class="brand"><img src="icon-192.png" alt="">Toán Tư Duy</div><div class="title">Chào ${S.profile.name}! Hôm nay học gì nào? 👇</div>
+  ${installBox()}
   <button class="bigbtn" onclick="showIsles()"><span class="ic">🗺️</span><span style="text-align:left">Chinh phục 10 hòn đảo<br><span style="font-size:16px;font-weight:600">Đã chinh phục ${won}/10 đảo 🏝️</span></span></button>
   <div class="menu">${CATS.map((c, i) => { const n = Object.keys(catProg(i)).length;
     return `<button class="tile" style="background:${c.color};animation-delay:${i * .07}s" onclick="showLevels(${i})"><span class="deco">${c.deco}</span><span class="ic">${c.icon}</span>${c.name}<div class="pbar"><i style="width:${n * 2}%"></i></div><span class="small">${n}/50 màn</span></button>`; }).join('')}</div>`;
 }
+
+// ───── Cài ứng dụng lên điện thoại ─────
+let installEvt = null;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if ($('instbox')) $('instbox').outerHTML = installBox(); });
+addEventListener('appinstalled', () => { installEvt = null; const b = $('instbox'); if (b) b.remove(); toast('📲', 'Đã cài xong! Tìm biểu tượng số 10 trên màn hình nhé.'); });
+const standalone = () => matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches || navigator.standalone;
+// Trình duyệt dựng sẵn trong Zalo, Facebook, Messenger… không cho cài ứng dụng
+const inApp = () => /Zalo|FBAN|FBAV|FB_IAV|Instagram|Line\/|TikTok|; wv\)/i.test(navigator.userAgent);
+const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
+function installBox() {
+  if (standalone()) return '';
+  const url = location.href.replace(/^https:\/\//, '');
+  let body;
+  if (inApp() && /Android/i.test(navigator.userAgent))
+    body = `Bạn đang mở trong Zalo/Facebook nên chưa cài được.<br><a class="btn" href="intent://${url}#Intent;scheme=https;package=com.android.chrome;end">🌐 Mở bằng Chrome</a>`;
+  else if (inApp())
+    body = 'Bạn đang mở trong Zalo/Facebook. Bấm dấu ⋯ góc trên → <b>Mở bằng trình duyệt</b> (Safari) rồi cài.';
+  else if (installEvt)
+    body = `<button class="btn" onclick="doInstall()">📲 Cài ứng dụng</button>`;
+  else if (isIOS())
+    body = 'Bấm nút <b>Chia sẻ</b> (ô vuông có mũi tên ⬆️) → <b>Thêm vào MH chính</b>.';
+  else
+    body = 'Bấm dấu <b>⋮</b> góc trên bên phải Chrome → <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào màn hình chính</b>.';
+  return `<div class="panel install" id="instbox"><img src="icon-192.png" alt=""><div>Cài <b>Toán Tư Duy</b> lên máy để bé mở nhanh, không cần mạng<br>${body}</div></div>`;
+}
+async function doInstall() { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt = null; }
 
 // ───── Bản đồ 50 màn ─────
 function showLevels(ci) {
