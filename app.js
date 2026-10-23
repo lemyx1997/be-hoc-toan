@@ -1,4 +1,6 @@
 // Phần điều khiển của app: hồ sơ, màn chơi, chinh phục, phần thưởng, khu bố mẹ.
+const APP_VER = 7; // tăng cùng tên bộ nhớ trong sw.js mỗi lần cập nhật
+let pendingReload = false; // có bản mới, chờ bé về trang chủ rồi tải lại
 const app = document.getElementById('app'), $ = id => document.getElementById(id);
 const today = () => new Date().toLocaleDateString('sv');
 
@@ -88,24 +90,40 @@ function showRest() {
 }
 
 // ───── Âm thanh: giọng đọc thu sẵn, giọng bố mẹ, nhạc nền ─────
+// Dùng MỘT máy phát cho cả app: điện thoại cho phép máy phát đã từng phát sau một lần chạm,
+// còn máy phát mới tạo ra có thể bị chặn (khi đó câu khen bị bỏ qua).
 // say() trả về một lời hứa: xong khi đã đọc hết (hoặc bị câu khác chen ngang)
-let voice = new Audio(), vq = [], voiceDone = null;
+const voice = new Audio(); voice.preload = 'auto';
+let vq = [], voiceDone = null, vtok = 0;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 function say(k) {
-  vq = (Array.isArray(k) ? k : [k]).filter(Boolean); voice.pause();
-  if (voiceDone) voiceDone();
-  return new Promise(res => { voiceDone = res; playNext(); });
+  vq = (Array.isArray(k) ? k : [k]).filter(Boolean); voice.pause(); vtok++;
+  if (voiceDone) { const d = voiceDone; voiceDone = null; d(); }
+  const tok = vtok;
+  return new Promise(res => { voiceDone = res; playNext(tok); });
 }
 // Chờ đến khi máy đọc xong câu đang đọc (tối đa 10 giây)
 async function waitIdle() { for (let t = 0; voiceDone && t < 50; t++) await sleep(200); }
-function playNext() {
+function playNext(tok) {
+  if (tok !== vtok) return;
   const k = vq.shift();
   if (!k) { duck(false); const d = voiceDone; voiceDone = null; if (d) d(); return; }
-  const a = voice = new Audio(k.startsWith('blob:') ? k : 'giong/' + k + '.mp3'); duck(true);
-  const next = () => { if (a === voice) playNext(); };
-  a.onended = next; a.onerror = next;
-  a.play().catch(next);
+  duck(true);
+  const next = () => playNext(tok);
+  voice.onended = next; voice.onerror = next;
+  voice.src = k.startsWith('blob:') ? k : 'giong/' + k + '.mp3'; voice.muted = false;
+  // AbortError = bị câu mới chen ngang (bỏ qua); lỗi khác = trình duyệt chặn → đọc đoạn sau
+  voice.play().catch(e => { if (e.name !== 'AbortError') next(); });
 }
+// Lần chạm đầu tiên: "mở khoá" máy phát để các câu đọc sau đó không bị điện thoại chặn
+addEventListener('pointerdown', function unlock() {
+  removeEventListener('pointerdown', unlock);
+  if (!voice.src) {
+    voice.src = 'giong/w0.mp3'; voice.muted = true;
+    const done = () => { if (voice.src.endsWith('/w0.mp3')) voice.pause(); voice.muted = false; };
+    voice.play().then(done, done);
+  }
+});
 function duck(on) { if (window.NhacNen && DB.music) NhacNen.setVolume(on ? .08 : .22); }
 function beep(ok, soft) {
   try { const c = NhacNen.getCtx(), t = c.currentTime;
@@ -213,6 +231,7 @@ function saveProfile() {
 // ───── Trang chủ ─────
 const chestReady = () => todaySecs() >= 600 && K.chest !== today();
 function home() {
+  if (pendingReload) { location.reload(); return; }
   if (resting()) return showRest();
   studying = false; setBack(null); refreshHead();
   const won = Object.keys(K.isles).length, left = Math.max(0, Math.ceil((600 - todaySecs()) / 60));
@@ -228,7 +247,8 @@ function home() {
   </div>
   <button class="bigbtn" onclick="showIsles()"><span class="ic">🗺️</span><span style="text-align:left">Chinh phục 10 hòn đảo<br><span style="font-size:16px;font-weight:600">Đã chinh phục ${won}/10 đảo 🏝️ · Đánh bại trùm, giải cứu bạn!</span></span></button>
   <div class="menu">${CATS.map((c, i) => { const n = Object.keys(catProg(i)).length;
-    return `<button class="tile" style="background:${c.color};animation-delay:${i * .07}s" onclick="showLevels(${i})"><span class="deco">${c.deco}</span><span class="ic">${c.icon}</span>${c.name}<div class="pbar"><i style="width:${n * 2}%"></i></div><span class="small">${n}/50 màn</span></button>`; }).join('')}</div>`;
+    return `<button class="tile" style="background:${c.color};animation-delay:${i * .07}s" onclick="showLevels(${i})"><span class="deco">${c.deco}</span><span class="ic">${c.icon}</span>${c.name}<div class="pbar"><i style="width:${n * 2}%"></i></div><span class="small">${n}/50 màn</span></button>`; }).join('')}</div>
+  <div class="small" style="text-align:center;margin-top:18px">Phiên bản ${APP_VER}</div>`;
 }
 
 // ───── Cài ứng dụng lên điện thoại ─────
@@ -307,7 +327,10 @@ function showQ() {
       st.wrong++; beep(0); react('sad'); talk('Thử lại nhé! 💪');
       if (run.mode === 'isle' && st.wrong === 1) {
         run.hearts--; showHearts();
-        if (run.hearts <= 0) { st.done = true; noteStat(it.key, false); setTimeout(() => finish(true), 900); return; }
+        if (run.hearts <= 0) {
+          st.done = true; noteStat(it.key, false);
+          const myRun = run; setTimeout(() => { if (run === myRun && $('body')) finish(true); }, 900); return;
+        }
         setTimeout(() => say('mattim'), 400);
       } else setTimeout(() => say('sai'), 400);
     },
@@ -380,8 +403,8 @@ function renderChoice(it, body, ctx) {
     : `${it.html ? `<div class="stage" id="stage">${it.html}</div>` : ''}<div class="opts ${it.layout || ''}" id="opts"></div>`;
   if (!it.flash) tapCount(body);
   if (it.flash) {
-    $('opts').style.visibility = 'hidden';
-    setTimeout(() => { const s = $('stage'); if (s) s.innerHTML = '<div class="big">🙈</div>'; if ($('opts')) $('opts').style.visibility = 'visible'; }, it.flash);
+    const s = $('stage'), o = $('opts'); o.style.visibility = 'hidden';
+    setTimeout(() => { if (!s.isConnected) return; s.innerHTML = '<div class="big">🙈</div>'; o.style.visibility = 'visible'; }, it.flash);
   }
   const btns = it.opts.map((o, idx) => {
     const b = document.createElement('button'); b.className = grid ? 'cell' : 'opt'; b.innerHTML = o.label;
@@ -598,7 +621,7 @@ function feed(id) {
   const f = SHOP.food.find(x => x[0] === id);
   if (K.coins < f[3]) { say('thieuxu'); toast('🪙', 'Chưa đủ xu rồi!<br>Học thêm để có xu nhé'); return; }
   K.coins -= f[3]; K.fed++; save(); refreshHead(); say('ngon'); hearts($('owl')); react('happy');
-  toast(f[1], 'Ngon quá! Cảm ơn bé!', 1400); setTimeout(showRoom, 1500); checkMedals();
+  toast(f[1], 'Ngon quá! Cảm ơn bé!', 1400); setTimeout(() => { if ($('room')) showRoom(); }, 1500); checkMedals();
 }
 function showShop(tab) {
   studying = false; setBack(showRoom);
@@ -701,4 +724,9 @@ if (!K) showProfile('new');
 else if (resting()) showRest();
 else if (Object.keys(DB.kids).length > 1) showPick();
 else home();
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
+// Có bản mới: tự tải lại khi bé không đang làm bài (đang làm thì đợi về trang chủ)
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  const hadSW = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js');
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadSW) return; if (studying) pendingReload = true; else location.reload(); });
+}

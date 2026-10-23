@@ -58,7 +58,7 @@ const GAMES = {
   } },
   timnhom: { name: 'Tìm nhóm đúng số', icon: '🎯', make(L) {
     const mx = MX(L), cs = distinct(NK(L), 1, mx), n = pick(cs), e = pick(ALL);
-    return { q: 'Bé tìm nhóm có ' + n + ' hình', v: ['timnhom', 'n' + n], html: `<div class="bignum">${n}</div>`,
+    return { q: 'Bé tìm nhóm có ' + n + ' hình', v: ['timnhom', 'w' + n], html: `<div class="bignum">${n}</div>`,
       opts: cs.map(c => ({ label: rows(e, c, 'sm'), ok: c === n })) };
   } },
   sothieu: { name: 'Số còn thiếu', icon: '🔟', make(L) {
@@ -88,7 +88,7 @@ const GAMES = {
   } },
   tach: { name: 'Tách số', icon: '🏠', make(L) {
     const n = 2 + R(MX(L) - 1), a = 1 + R(n - 1), e = pick(FRUITS);
-    return { q: 'Mái nhà là số ' + n + '. Phòng bên kia có mấy quả?', v: 'tach',
+    return { q: 'Mái nhà là số ' + n + '. Phòng bên kia có mấy quả?', v: ['tach1', 'w' + n, 'tach2'],
       html: `<div class="house"><div class="roof"><b>${n}</b></div><div class="rooms"><div class="box">${rows(e, a, 'sm')}</div><div class="box q">❓</div></div></div>`,
       opts: numOpts(n - a, L, 0) };
   } },
@@ -219,13 +219,15 @@ const GAMES = {
 };
 
 // ───── Câu chuyện có nhân vật (nhân vật vui khi bé đúng, gãi đầu khi bé sai) ─────
-const STORY_ADD = [['🐰', '🥕', 'tho_them', 'Thỏ con có {a} củ cà rốt, mẹ cho thêm {b} củ. Thỏ có tất cả mấy củ?'],
-  ['🐻', '🍯', 'gau_them', 'Gấu có {a} hũ mật, bạn tặng thêm {b} hũ. Gấu có tất cả mấy hũ?'],
-  ['🐔', '🐥', 'ga_them', 'Gà mẹ có {a} gà con, thêm {b} chú chạy tới. Có tất cả mấy gà con?']];
-const STORY_SUB = [['🐱', '🐟', 'meo_bot', 'Mèo có {a} con cá, mèo ăn mất {b} con. Mèo còn lại mấy con cá?'],
-  ['🐵', '🍌', 'khi_bot', 'Khỉ có {a} quả chuối, khỉ cho bạn {b} quả. Khỉ còn lại mấy quả?'],
-  ['👧', '🎈', 'bong_bot', 'Bé có {a} quả bóng bay, bay mất {b} quả. Bé còn lại mấy quả?']];
+// Giọng đọc ghép từng đoạn để đọc đúng con số đang hiện: "<x>1" + số a + "<x>2" + số b + "<x>3"
+const STORY_ADD = [['🐰', '🥕', 'tho', 'Thỏ con có {a} củ cà rốt, mẹ cho thêm {b} củ. Thỏ có tất cả mấy củ?'],
+  ['🐻', '🍯', 'gau', 'Gấu có {a} hũ mật, bạn tặng thêm {b} hũ. Gấu có tất cả mấy hũ?'],
+  ['🐔', '🐥', 'ga', 'Gà mẹ có {a} chú gà con, thêm {b} chú nữa chạy tới. Có tất cả mấy chú gà con?']];
+const STORY_SUB = [['🐱', '🐟', 'meo', 'Mèo có {a} con cá, mèo ăn mất {b} con. Mèo còn lại mấy con cá?'],
+  ['🐵', '🍌', 'khi', 'Khỉ có {a} quả chuối, khỉ cho bạn {b} quả. Khỉ còn lại mấy quả?'],
+  ['👧', '🎈', 'bong', 'Bé có {a} quả bóng bay, bay mất {b} quả. Bé còn lại mấy quả bóng?']];
 const fill = (t, a, b) => t.replace('{a}', a).replace('{b}', b);
+const storyVoice = (s, a, b) => [s + '1', 'w' + a, s + '2', 'w' + b, s + '3'];
 
 // Phân loại: mỗi nhóm có "ngôi nhà" riêng
 const SORTS = [{ name: 'Trái cây', icon: '🧺', items: FRUITS }, { name: 'Con vật', icon: '🏡', items: ANIMALS },
@@ -250,16 +252,16 @@ Object.assign(GAMES, {
   } },
   chuyencong: { name: 'Chuyện thêm', icon: '📖', make(L) {
     const [ch, it, v, t] = pick(STORY_ADD), n = 2 + R(MX(L) - 1), a = 1 + R(n - 1), b = n - a;
-    return { q: fill(t, a, b), v, html: `<div class="story"><span class="char">${ch}</span><div class="box">${rows(it, a, 'sm')}</div><span class="sign">➕</span><div class="box flyin">${rows(it, b, 'sm')}</div></div>`, opts: numOpts(n, L, 1) };
+    return { q: fill(t, a, b), v: storyVoice(v, a, b), html: `<div class="story"><span class="char">${ch}</span><div class="box">${rows(it, a, 'sm')}</div><span class="sign">➕</span><div class="box flyin">${rows(it, b, 'sm')}</div></div>`, opts: numOpts(n, L, 1) };
   } },
   chuyentru: { name: 'Chuyện bớt', icon: '📕', make(L) {
     const [ch, it, v, t] = pick(STORY_SUB), n = 2 + R(MX(L) - 1), b = 1 + R(n - 1);
-    return { q: fill(t, n, b), v, html: `<div class="story"><span class="char">${ch}</span><div class="box">${rows([...Array(n - b).fill(it), ...Array(b).fill(`<s class="gach">${it}</s>`)], 0, 'sm')}</div></div>`, opts: numOpts(n - b, L, 0) };
+    return { q: fill(t, n, b), v: storyVoice(v, n, b), html: `<div class="story"><span class="char">${ch}</span><div class="box">${rows([...Array(n - b).fill(it), ...Array(b).fill(`<s class="gach">${it}</s>`)], 0, 'sm')}</div></div>`, opts: numOpts(n - b, L, 0) };
   } },
   // Kéo thả
   keoqua: { name: 'Kéo quả vào giỏ', icon: '🧺', special: 1, make(L) {
     const n = 1 + R(MX(L));
-    return { kind: 'dragcount', q: 'Kéo vào giỏ đúng ' + n + ' quả rồi bấm Xong nhé!', v: 'keoqua', n, piece: pick(FRUITS), total: Math.min(n + 1 + R(3), 12) };
+    return { kind: 'dragcount', q: 'Kéo vào giỏ đúng ' + n + ' quả rồi bấm Xong nhé!', v: ['keo1', 'w' + n, 'keo2'], n, piece: pick(FRUITS), total: Math.min(n + 1 + R(3), 12) };
   } },
   choan: { name: 'Cho thú ăn', icon: '🍽️', special: 1, make(L) {
     const ps = shuffle(FOODS).slice(0, L < 15 ? 2 : L < 35 ? 3 : 4);
@@ -319,7 +321,7 @@ Object.assign(GAMES, {
   cuahang: { name: 'Cửa hàng nhỏ', icon: '🛒', special: 1, make(L) {
     const n = 2 + R(MX(L) - 1), item = pick(['🧸', '🍭', '🎈', '🍦', '🚗', '📚', '🪀', '🍩', '🧃', '🪁']);
     const coins = L < 20 ? Array(Math.min(n + 2 + R(3), 12)).fill(1) : L < 35 ? [...Array(4).fill(1), ...Array(4).fill(2)] : [1, 1, 1, 2, 2, 2, 5, 5];
-    return { kind: 'shop', q: 'Món đồ giá ' + n + ' xu. Bé trả đúng ' + n + ' xu nhé!', v: 'cuahang', n, item, coins: shuffle(coins) };
+    return { kind: 'shop', q: 'Món đồ giá ' + n + ' xu. Bé trả đúng ' + n + ' xu nhé!', v: ['shop1', 'w' + n, 'shop2'], n, item, coins: shuffle(coins) };
   } },
 });
 
