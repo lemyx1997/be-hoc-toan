@@ -219,12 +219,12 @@ const GAMES = {
 };
 
 const CATS = [
-  { name: 'Số và Đếm', icon: '🔢', color: '#ffe0d6', deco: '🎈', games: ['dem', 'nhieu', 'timnhom', 'sothieu', 'solon'], v: 'cat0' },
-  { name: 'Gộp và Tách', icon: '🧮', color: '#d6f5ef', deco: '🍎', games: ['gop', 'bot', 'tach', 'domino', 'chimden', 'baydi'], v: 'cat5' },
-  { name: 'So sánh', icon: '📏', color: '#d9f0ff', deco: '🐘', games: ['dai', 'to', 'cao', 'nang'], v: 'cat1' },
-  { name: 'Hình khối', icon: '🔷', color: '#e3f7d9', deco: '⭐', games: ['hinh', 'demhinh', 'giong', 'vathinh'], v: 'cat2' },
-  { name: 'Quan sát', icon: '👀', color: '#fff1c2', deco: '🔍', games: ['diemkhac', 'khac', 'timdoi', 'thieu'], v: 'cat3' },
-  { name: 'Suy luận', icon: '🧩', color: '#eedcff', deco: '💡', games: ['quyluat', 'an', 'odau', 'nguoc', 'nghe'], v: 'cat4' },
+  { name: 'Số và Đếm', icon: '🔢', color: '#ffe0ec', deco: '🎈', games: ['dem', 'nhieu', 'timnhom', 'sothieu', 'solon'], v: 'cat0' },
+  { name: 'Gộp và Tách', icon: '🧮', color: '#fbdcf0', deco: '🍎', games: ['gop', 'bot', 'tach', 'domino', 'chimden', 'baydi'], v: 'cat5' },
+  { name: 'So sánh', icon: '📏', color: '#f3e0ff', deco: '🐘', games: ['dai', 'to', 'cao', 'nang'], v: 'cat1' },
+  { name: 'Hình khối', icon: '🔷', color: '#ffd9e6', deco: '⭐', games: ['hinh', 'demhinh', 'giong', 'vathinh'], v: 'cat2' },
+  { name: 'Quan sát', icon: '👀', color: '#ffe6f2', deco: '🔍', games: ['diemkhac', 'khac', 'timdoi', 'thieu'], v: 'cat3' },
+  { name: 'Suy luận', icon: '🧩', color: '#ecdcff', deco: '💡', games: ['quyluat', 'an', 'odau', 'nguoc', 'nghe'], v: 'cat4' },
 ];
 
 // 10 hòn đảo chinh phục — câu hỏi trộn mọi chủ đề, khó dần
