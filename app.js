@@ -1,14 +1,14 @@
 // Phần điều khiển của app: hồ sơ, màn chơi, chinh phục, phần thưởng, khu bố mẹ.
-const APP_VER = 7; // tăng cùng tên bộ nhớ trong sw.js mỗi lần cập nhật
+const APP_VER = 8; // tăng cùng tên bộ nhớ trong sw.js mỗi lần cập nhật
 let pendingReload = false; // có bản mới, chờ bé về trang chủ rồi tải lại
 const app = document.getElementById('app'), $ = id => document.getElementById(id);
 const today = () => new Date().toLocaleDateString('sv');
 
 // ───── Dữ liệu lưu trên máy: nhiều hồ sơ, mỗi bé một tiến độ riêng ─────
 function newKid(profile) {
-  return { profile, prog: {}, isles: {}, time: {}, medals: {}, stickers: {}, rescued: {}, coins: 0, items: {}, hat: null, fed: 0, stats: {}, chest: '' };
+  return { profile, prog: {}, isles: {}, time: {}, medals: {}, stickers: {}, rescued: {}, coins: 0, items: {}, hat: null, fed: 0, stats: {}, chest: '', daily: {} };
 }
-let DB = { cur: null, kids: {}, music: true, limit: 0, restUntil: 0 };
+let DB = { cur: null, kids: {}, music: true, limit: 0, restUntil: 0, musicVol: .22, slow: false };
 try {
   const d = JSON.parse(localStorage.getItem('ttd') || 'null');
   if (d) Object.assign(DB, d);
@@ -27,7 +27,15 @@ const totalStars = () => Object.values(K.prog).reduce((s, p) => s + Object.value
 const threeStars = () => Object.values(K.prog).reduce((s, p) => s + Object.values(p).filter(x => x === 3).length, 0);
 const todaySecs = () => K.time[today()] || 0;
 const totalSecs = () => Object.values(K.time).reduce((a, b) => a + b, 0);
-function streak() { let n = 0; const d = new Date(); while ((K.time[d.toLocaleDateString('sv')] || 0) >= 60) { n++; d.setDate(d.getDate() - 1); } return n; }
+// Số ngày học liền (mỗi ngày ≥ 1 phút). Hôm nay chưa học thì vẫn tính chuỗi tới hôm qua.
+function streak() {
+  let n = 0; const d = new Date();
+  if ((K.time[d.toLocaleDateString('sv')] || 0) < 60) d.setDate(d.getDate() - 1);
+  while ((K.time[d.toLocaleDateString('sv')] || 0) >= 60) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+const dailyDone = () => !!K.daily[today()];
+const totalLevels = () => CATS.length * 50;
 const mins = s => s < 3600 ? Math.floor(s / 60) + ' phút' : Math.floor(s / 3600) + ' giờ ' + Math.floor(s % 3600 / 60) + ' phút';
 
 // ───── Huy chương ─────
@@ -36,7 +44,8 @@ const MEDALS = [
   ['m50', '🥇', 'Qua 50 màn', () => passed() >= 50], ['m150', '🏆', 'Qua 150 màn', () => passed() >= 150],
   ['s3', '🌟', 'Màn 3 sao đầu tiên', () => threeStars() >= 1], ['s10', '💫', '10 màn 3 sao', () => threeStars() >= 10],
   ['st100', '⭐', 'Gom 100 ngôi sao', () => totalStars() >= 100],
-  ['all', '🌈', 'Chơi đủ 6 chủ đề', () => CATS.every((c, i) => Object.keys(catProg(i)).length > 0)],
+  ['all', '🌈', 'Chơi đủ các chủ đề', () => CATS.every((c, i) => Object.keys(catProg(i)).length > 0)],
+  ['day1', '📅', 'Xong bài hôm nay đầu tiên', () => Object.keys(K.daily).length >= 1], ['day7', '🗓️', '7 ngày làm bài hôm nay', () => Object.keys(K.daily).length >= 7],
   ['cat', '👑', 'Hoàn thành 1 chủ đề', () => CATS.some((c, i) => Object.keys(catProg(i)).length >= 50)],
   ['i1', '🏝️', 'Chinh phục hòn đảo đầu', () => Object.keys(K.isles).length >= 1], ['i10', '🗺️', 'Chinh phục cả 10 đảo', () => Object.keys(K.isles).length >= 10],
   ['r3', '🦸', 'Giải cứu 3 bạn', () => Object.keys(K.rescued).length >= 3],
@@ -112,6 +121,8 @@ function playNext(tok) {
   const next = () => playNext(tok);
   voice.onended = next; voice.onerror = next;
   voice.src = k.startsWith('blob:') ? k : 'giong/' + k + '.mp3'; voice.muted = false;
+  // Giọng chậm cho bé mới học (giữ nguyên độ cao giọng)
+  voice.preservesPitch = true; voice.defaultPlaybackRate = voice.playbackRate = DB.slow && !k.startsWith('blob:') ? .82 : 1;
   // AbortError = bị câu mới chen ngang (bỏ qua); lỗi khác = trình duyệt chặn → đọc đoạn sau
   voice.play().catch(e => { if (e.name !== 'AbortError') next(); });
 }
@@ -124,7 +135,7 @@ addEventListener('pointerdown', function unlock() {
     voice.play().then(done, done);
   }
 });
-function duck(on) { if (window.NhacNen && DB.music) NhacNen.setVolume(on ? .08 : .22); }
+function duck(on) { if (window.NhacNen && DB.music) NhacNen.setVolume(on ? DB.musicVol * .35 : DB.musicVol); }
 function beep(ok, soft) {
   try { const c = NhacNen.getCtx(), t = c.currentTime;
     (ok ? (soft ? [880] : [660, 880, 1320]) : [220, 180]).forEach((f, i) => { const o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.value = f; o.connect(g); g.connect(c.destination);
@@ -132,7 +143,7 @@ function beep(ok, soft) {
   } catch (e) {}
 }
 let musicOn = false;
-function startMusic() { if (DB.music && !musicOn && window.NhacNen) { NhacNen.start('sangtao'); NhacNen.setVolume(.22); musicOn = true; } }
+function startMusic() { if (DB.music && !musicOn && window.NhacNen) { NhacNen.start('sangtao'); NhacNen.setVolume(DB.musicVol); musicOn = true; } }
 function toggleMusic() { DB.music = !DB.music; save(); refreshHead(); if (DB.music) { musicOn = false; startMusic(); } else { NhacNen.stop(); musicOn = false; } }
 addEventListener('pointerdown', startMusic);
 
@@ -245,6 +256,7 @@ function home() {
     <button class="qb" style="animation-delay:.15s" onclick="showMedals()"><span class="ic">🏅</span>Huy chương<span class="dot">${Object.keys(K.medals).length}</span></button>
     <button class="qb" style="animation-delay:.2s" onclick="gate(()=>showParent('report'))"><span class="ic">👨‍👩‍👧</span>Bố mẹ</button>
   </div>
+  <button class="bigbtn daily ${dailyDone() ? 'did' : ''}" onclick="playDaily()"><span class="ic">📅</span><span style="text-align:left">${dailyDone() ? 'Bài hôm nay: đã xong ✅' : 'Bài hôm nay'}<br><span style="font-size:16px;font-weight:600">${dailyDone() ? 'Bé có thể làm thêm lần nữa · ' : '10 câu, ưu tiên phần bé cần luyện · '}${weekDots()}</span></span></button>
   <button class="bigbtn" onclick="showIsles()"><span class="ic">🗺️</span><span style="text-align:left">Chinh phục 10 hòn đảo<br><span style="font-size:16px;font-weight:600">Đã chinh phục ${won}/10 đảo 🏝️ · Đánh bại trùm, giải cứu bạn!</span></span></button>
   <div class="menu">${CATS.map((c, i) => { const n = Object.keys(catProg(i)).length;
     return `<button class="tile" style="background:${c.color};animation-delay:${i * .07}s" onclick="showLevels(${i})"><span class="deco">${c.deco}</span><span class="ic">${c.icon}</span>${c.name}<div class="pbar"><i style="width:${n * 2}%"></i></div><span class="small">${n}/50 màn</span></button>`; }).join('')}</div>
@@ -303,6 +315,30 @@ function playIsle(ii) {
   run = { mode: 'isle', ii, L: I.L, qs, i: 0, right: 0, hearts: 3 };
   run.intro = 'chinhphuc'; setBack(showIsles); studying = true; showQ();
 }
+// ───── Bài hôm nay: 10 câu trộn mọi chủ đề, ưu tiên dạng bé hay sai ─────
+// Dạng bé đúng ít được chọn nhiều hơn; dạng chưa học có cơ hội vừa phải. Độ khó = màn bé đang học ở chủ đề đó.
+function dailyQuestions() {
+  const keys = Object.keys(GAMES), w = k => { const s = K.stats[k]; return s && s.n >= 2 ? .3 + (1 - s.ok / s.n) * 2 : .8; };
+  const used = {}, qs = [];
+  while (qs.length < 10) {
+    const cand = keys.filter(k => (used[k] || 0) < 2 && (!qs.length || qs[qs.length - 1].key !== k));
+    let r = Math.random() * cand.reduce((s, k) => s + w(k), 0), k = cand[0];
+    for (const c of cand) { r -= w(c); if (r <= 0) { k = c; break; } }
+    used[k] = (used[k] || 0) + 1;
+    const L = Math.min(50, Object.keys(catProg(CAT_OF[k])).length + 1);
+    qs.push(Object.assign(GAMES[k].make(L), { key: k }));
+  }
+  return qs;
+}
+// 7 chấm cho 7 ngày gần nhất: ✅ đã làm bài hôm nay, ⚪ chưa
+function weekDots() {
+  return range(0, 6).reverse().map(i => { const d = new Date(); d.setDate(d.getDate() - i); return K.daily[d.toLocaleDateString('sv')] ? '✅' : '⚪'; }).join('');
+}
+function playDaily() {
+  if (resting()) return showRest();
+  run = { mode: 'daily', L: 0, qs: dailyQuestions(), i: 0, right: 0, intro: 'baihomnay' };
+  setBack(home); studying = true; showQ();
+}
 function noteStat(key, ok) { const s = K.stats[key] || (K.stats[key] = { n: 0, ok: 0 }); s.n++; if (ok) s.ok++; }
 
 function showQ() {
@@ -312,8 +348,8 @@ function showQ() {
     ? `<div class="path">${range(0, 9).map(i => `<span class="stone ${i < run.i ? 'done' : ''}">${i === run.i ? `<span class="me av">${avHTML(K.profile.avatar)}</span>` : ''}</span>`).join('')}<span style="font-size:34px">🎁</span></div>
        <div class="qhead"><span class="hearts" id="hearts"></span><span class="sp"></span><b>${I.icon} ${I.name}</b></div>
        ${it.boss ? `<div class="boss" id="boss"><span class="bi">${I.boss}</span><div>Trùm cuối: ${I.bossName}!<br><span style="font-weight:600;font-size:15px">Trả lời đúng để giải cứu bạn ${I.friend}</span></div></div>` : ''}`
-    : `<div class="qhead"><b>Màn ${run.L}</b><div class="qbar"><i style="width:${run.i * 10}%"></i></div><b>${run.i + 1}/10</b></div>`;
-  app.innerHTML = head + `<div class="q"><button class="speak" id="sp">🔊</button><span>${it.q}</span></div>
+    : `<div class="qhead"><b>${run.mode === 'daily' ? '📅 Hôm nay' : 'Màn ' + run.L}</b><div class="qbar"><i style="width:${run.i * 10}%"></i></div><b>${run.i + 1}/10</b></div>`;
+  app.innerHTML = head + `<div class="q"><button class="speak" id="sp">🔊</button><span>${it.q}</span><button class="speak hintb" id="hb" title="Gợi ý">💡</button></div>
     <div style="text-align:center;margin:-8px 0 10px"><span class="gname">${GAMES[it.key].icon} ${GAMES[it.key].name}</span></div><div id="body"></div>`;
   showHearts();
   $('sp').onclick = () => say(it.v);
@@ -337,7 +373,9 @@ function showQ() {
     win(sayKey) {
       if (st.done) return;
       st.done = true; beep(1); confetti(); react('happy');
-      noteStat(it.key, !st.wrong); if (!st.wrong) run.right++;
+      // Dùng gợi ý thì không tính là "đúng ngay lần đầu"
+      const first = !st.wrong && !st.hinted;
+      noteStat(it.key, first); if (first) run.right++;
       const stage = app.querySelector('.stage'); if (stage) stage.classList.add('win');
       talk(pick(['Giỏi quá! 🎉', 'Đúng rồi! 🌟', 'Tuyệt vời! 👏', 'Bé thật thông minh! 🧠']));
       // Đợi đọc xong lời khen rồi mới sang câu mới (tối đa 10 giây phòng khi âm thanh bị kẹt)
@@ -353,7 +391,14 @@ function showQ() {
       }, Math.max(400, 1500 - (Date.now() - t0))));
     },
   };
-  (RENDER[it.kind] || renderChoice)(it, $('body'), ctx);
+  const view = (RENDER[it.kind] || renderChoice)(it, $('body'), ctx) || {};
+  // Nút gợi ý: bạn Cú giúp một chút (mỗi dạng bài gợi ý theo cách riêng)
+  $('hb').onclick = () => {
+    if (st.done) return;
+    st.hinted = true; react('happy'); talk('Bạn Cú gợi ý nè! 💡');
+    say(view.hint ? 'goiy' : ['goiy', ...[].concat(it.v)]);
+    if (view.hint) view.hint();
+  };
 }
 function showHearts() { const h = $('hearts'); if (h && run.mode === 'isle') h.textContent = '❤️'.repeat(run.hearts) + '🤍'.repeat(3 - run.hearts); }
 
@@ -420,6 +465,13 @@ function renderChoice(it, body, ctx) {
     };
     $('opts').appendChild(b); return b;
   });
+  return {
+    hint() { // ẩn bớt một đáp án sai; khi chỉ còn 2 lựa chọn (hoặc dạng lưới/hàng) thì làm sáng đáp án đúng
+      const wrongLeft = btns.filter((b, i) => !it.opts[i].ok && b.style.visibility !== 'hidden');
+      if (wrongLeft.length > 1 && !grid && it.layout !== 'line') pick(wrongLeft).style.visibility = 'hidden';
+      else btns[it.opts.findIndex(x => x.ok)].classList.add('hint');
+    },
+  };
 }
 const RENDER = {
   dragcount(it, body, ctx) {
@@ -435,6 +487,7 @@ const RENDER = {
       }, () => { if (p.parentNode === bkin) { pile.appendChild(p); say('n' + count()); } });
     }
     $('done').onclick = () => { if (count() === it.n) { burst($('bk')); ctx.win('n' + it.n); } else ctx.wrong(); };
+    return { hint() { const c = count(); talk(c < it.n ? `Thêm ${it.n - c} quả nữa nhé! 🍎` : c > it.n ? `Bớt ra ${c - it.n} quả nhé!` : 'Đủ rồi, bấm Xong nhé! ✅'); if (c === it.n) $('done').classList.add('hint'); } };
   },
   dragmatch(it, body, ctx) {
     body.innerHTML = `<div class="stage"><div class="zones">${it.zones.map((z, i) => `<div class="zone" data-id="${i}"><div class="zl">${z}</div><div class="slot"></div></div>`).join('')}</div><div class="pile" id="pile"></div></div>`;
@@ -449,7 +502,13 @@ const RENDER = {
         }
         ctx.wrong(); return false;
       });
+      pc.el = p;
     });
+    return { hint() { // làm sáng một món chưa xếp và chỗ của nó
+      const pc = it.pieces.find(x => x.el.parentNode.id === 'pile'); if (!pc) return;
+      pc.el.classList.add('hint'); app.querySelector(`.zone[data-id="${pc.to}"]`).classList.add('hint');
+      setTimeout(() => { pc.el.classList.remove('hint'); app.querySelectorAll('.zone.hint').forEach(z => z.classList.remove('hint')); }, 2500);
+    } };
   },
   memory(it, body, ctx) {
     body.innerHTML = `<div class="stage"><div class="cards" id="cards" style="grid-template-columns:repeat(${it.cols},auto)"></div></div>`;
@@ -467,6 +526,11 @@ const RENDER = {
       };
       $('cards').appendChild(b);
     });
+    return { hint() { // lật cho xem tất cả thẻ trong 1,5 giây
+      if (busy || open.length) return; busy = true;
+      const hid = [...app.querySelectorAll('.card:not(.flip)')]; hid.forEach(c => c.classList.add('flip'));
+      setTimeout(() => { hid.forEach(c => c.classList.remove('flip')); busy = false; }, 1500);
+    } };
   },
   maze(it, body, ctx) {
     body.innerHTML = `<div class="stage mazest"><div class="maze" id="maze" style="--n:${it.size}"></div></div>`;
@@ -485,6 +549,7 @@ const RENDER = {
       };
       $('maze').appendChild(b); return b;
     });
+    return { hint() { const b = btns[it.cells.findIndex(c => c.path === cur + 1)]; b.classList.add('hint'); setTimeout(() => b.classList.remove('hint'), 2500); } };
   },
   paint(it, body, ctx) {
     const g = it.art.g, H = g.length, W = g[0].length, digits = Object.keys(it.art.c);
@@ -512,6 +577,12 @@ const RENDER = {
       };
       $('paint').appendChild(b);
     }
+    return { hint() { // chọn sẵn màu còn thiếu và làm sáng các ô cần tô màu đó
+      const i = cells.findIndex(c => !c.classList.contains('done')); if (i < 0) return;
+      const d = g[Math.floor(i / W)][i % W]; app.querySelector(`.pal[data-d="${d}"]`).click();
+      const hl = cells.filter((c, k) => !c.classList.contains('done') && g[Math.floor(k / W)][k % W] === d);
+      hl.forEach(c => c.classList.add('hint')); setTimeout(() => hl.forEach(c => c.classList.remove('hint')), 2500);
+    } };
   },
   shop(it, body, ctx) {
     body.innerHTML = `<div class="stage"><div class="shopq"><span class="big" style="font-size:80px">${it.item}</span><span class="tag">🏷️ ${it.n} xu</span></div>
@@ -527,6 +598,52 @@ const RENDER = {
       const sum = [...$('tray').children].reduce((s, b) => s + +b.dataset.v, 0);
       if (sum === it.n) { burst($('tray'), ['🪙', '⭐', '🛍️']); ctx.win('n' + it.n); } else ctx.wrong();
     };
+    return { hint() {
+      const sum = [...$('tray').children].reduce((s, b) => s + +b.dataset.v, 0);
+      talk(sum < it.n ? `Quầy mới có ${sum} xu, cần ${it.n} xu 🪙` : sum > it.n ? `Quầy có ${sum} xu, nhiều quá rồi!` : 'Đủ rồi, bấm Trả tiền nhé!');
+      if (sum === it.n) $('pay').classList.add('hint');
+    } };
+  },
+  // Tập viết số: bé tô theo nét số mờ; app kiểm tra phần nét đã tô kín và không tô lem quá nhiều
+  trace(it, body, ctx) {
+    body.innerHTML = `<div class="stage"><div class="tracebox" id="tb"><canvas id="tg"></canvas><canvas id="tk"></canvas></div></div>
+      <div class="opts"><button class="btn alt" id="clr">🧽 Xoá</button><button class="btn" id="done">✅ Xong</button></div>`;
+    const box = $('tb'), S = Math.min(box.clientWidth || 300, 340), dpr = window.devicePixelRatio || 1, P = Math.round(S * dpr);
+    box.style.height = S + 'px';
+    const txt = String(it.d), font = `900 ${Math.round((txt.length > 1 ? .62 : .82) * P)}px "Arial Rounded MT Bold", Arial, sans-serif`;
+    const mk = (cv, stroke) => { cv.width = cv.height = P; cv.style.width = cv.style.height = S + 'px'; const c = cv.getContext('2d'); c.font = font; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'; return c; };
+    // nét số mờ để bé nhìn theo
+    const g = mk($('tg')); g.fillStyle = '#ffd1e6'; g.fillText(txt, P / 2, P * .54);
+    g.setLineDash([10 * dpr, 10 * dpr]); g.strokeStyle = '#ff7eb3'; g.lineWidth = 3 * dpr; g.strokeText(txt, P / 2, P * .54);
+    // hai bản ẩn để chấm: nét chuẩn, và nét nới rộng (cho phép tô lệch một chút)
+    const gf = mk(document.createElement('canvas')); gf.fillText(txt, P / 2, P * .54);
+    const gw = mk(document.createElement('canvas')); gw.lineWidth = P * .12; gw.fillText(txt, P / 2, P * .54); gw.strokeText(txt, P / 2, P * .54);
+    const k = mk($('tk')); k.strokeStyle = '#ff5c9a'; k.lineWidth = P * .085; k.lineCap = 'round'; k.lineJoin = 'round';
+    let drawing = false, last = null;
+    const pt = e => { const r = $('tk').getBoundingClientRect(); return [(e.clientX - r.left) * P / r.width, (e.clientY - r.top) * P / r.height]; };
+    const cv = $('tk');
+    cv.onpointerdown = e => { if (ctx.st.done) return; e.preventDefault(); drawing = true; last = pt(e); try { cv.setPointerCapture(e.pointerId); } catch (_) {} k.beginPath(); k.arc(last[0], last[1], k.lineWidth / 2, 0, 7); k.fillStyle = k.strokeStyle; k.fill(); };
+    cv.onpointermove = e => { if (!drawing) return; const p = pt(e); k.beginPath(); k.moveTo(last[0], last[1]); k.lineTo(p[0], p[1]); k.stroke(); last = p; };
+    cv.onpointerup = cv.onpointercancel = () => { drawing = false; };
+    $('clr').onclick = () => { if (!ctx.st.done) k.clearRect(0, 0, P, P); };
+    const score = () => {
+      const a = gf.getImageData(0, 0, P, P).data, w = gw.getImageData(0, 0, P, P).data, b = k.getImageData(0, 0, P, P).data, step = 4 * Math.max(1, Math.round(dpr));
+      let guide = 0, cov = 0, ink = 0, stray = 0;
+      for (let y = 0; y < P; y += step) for (let x = 0; x < P; x += step) {
+        const i = (y * P + x) * 4 + 3;
+        if (a[i] > 60) { guide++; if (b[i] > 0) cov++; }
+        if (b[i] > 0) { ink++; if (w[i] === 0) stray++; }
+      }
+      return { cov: guide ? cov / guide : 0, stray: ink ? stray / ink : 1 };
+    };
+    $('done').onclick = () => {
+      if (ctx.st.done) return;
+      const s = score();
+      if (s.cov >= .6 && s.stray <= .35) { burst($('tb'), ['✍️', '⭐', '💖']); ctx.win('n' + it.d); }
+      else { talk(s.cov < .6 ? 'Tô thêm cho kín nét số nhé! ✍️' : 'Bé tô lem ra ngoài nhiều quá, thử lại nhé!'); ctx.wrong(); if (s.cov < .6) setTimeout(() => say('vietlai'), 900); }
+    };
+    ctx.score = score; // để kiểm tra tự động
+    return { hint() { $('tg').classList.add('hint'); setTimeout(() => $('tg') && $('tg').classList.remove('hint'), 2500); } };
   },
 };
 
@@ -548,6 +665,15 @@ function finish(lost) {
       ${run.L < 50 ? `<button class="btn" onclick="playLevel(${run.ci},${run.L + 1})">Màn tiếp ▶️</button>` : ''}
       <button class="btn alt" onclick="playLevel(${run.ci},${run.L})">🔁 Chơi lại</button><button class="btn alt" onclick="showLevels(${run.ci})">🗺️ Chọn màn</button></div>`;
     say(stk ? ['sao' + st, 'sticker'] : 'sao' + st); confetti(50);
+  } else if (run.mode === 'daily') {
+    K.daily[today()] = Math.max(K.daily[today()] || 0, st); K.coins += 3 + st;
+    const stk = st >= 2 ? giveSticker() : null; save();
+    app.innerHTML = `<div class="done panel"><div class="big">📅</div>Xong bài hôm nay!<br>Bé làm đúng ngay ${run.right}/10 câu
+      <div class="starrow">${range(1, 3).map(i => `<span style="animation-delay:${i * .3}s">${i <= st ? '⭐' : '☆'}</span>`).join('')}</div>
+      <div>+${3 + st} 🪙 xu</div><div style="font-size:30px;margin:8px 0">${weekDots()}</div><div class="small">7 ngày gần nhất · học đều mỗi ngày nhé!</div>
+      ${stk ? `<div class="reveal"><span class="ic">${stk[0]}</span>Thẻ mới: ${stk[1]}</div>` : ''}<br>
+      <button class="btn" onclick="home()">🏠 Về trang chủ</button></div>`;
+    say(stk ? ['xongbai', 'sao' + st, 'sticker'] : ['xongbai', 'sao' + st]); confetti(60);
   } else if (lost) {
     save();
     app.innerHTML = `<div class="done panel"><div class="big">🥺</div>Hết trái tim rồi!<br>Mình thử lại nhé, bé sẽ làm được!<br>
@@ -654,9 +780,9 @@ function gate(cb) {
 }
 function showParent(tab) {
   studying = false; setBack(home);
-  const T = [['report', '📊 Báo cáo'], ['time', '⏰ Thời gian'], ['voice', '🎤 Giọng bố mẹ'], ['kids', '👥 Hồ sơ']];
+  const T = [['report', '📊 Báo cáo'], ['time', '⚙️ Cài đặt'], ['voice', '🎤 Giọng bố mẹ'], ['kids', '👥 Hồ sơ'], ['backup', '💾 Sao lưu']];
   app.innerHTML = `<div class="title">👨‍👩‍👧 Góc bố mẹ</div><div class="tabs">${T.map(([k, n]) => `<button class="${k === tab ? 'on' : ''}" onclick="showParent('${k}')">${n}</button>`).join('')}</div><div id="pbody"></div>`;
-  ({ report: parentReport, time: parentTime, voice: parentVoice, kids: parentKids })[tab]($('pbody'));
+  ({ report: parentReport, time: parentTime, voice: parentVoice, kids: parentKids, backup: parentBackup })[tab]($('pbody'));
 }
 function parentReport(el) {
   const days = range(0, 6).reverse().map(i => { const d = new Date(); d.setDate(d.getDate() - i); return d; });
@@ -670,7 +796,7 @@ function parentReport(el) {
   const gname = g => GAMES[g] ? GAMES[g].icon + ' ' + GAMES[g].name : g;
   el.innerHTML = `<div class="panel"><b>Bé ${K.profile.name}</b><div class="stats" style="margin-top:8px">
     <div>Hôm nay<b>${mins(todaySecs())}</b></div><div>Tổng thời gian<b>${mins(totalSecs())}</b></div><div>Câu đã làm<b>${totalN}</b></div>
-    <div>Đúng ngay lần đầu<b>${totalN ? Math.round(totalOk / totalN * 100) : 0}%</b></div><div>Màn đã qua<b>${passed()}/300</b></div><div>Học liền<b>${streak()} ngày</b></div></div></div>
+    <div>Đúng ngay lần đầu<b>${totalN ? Math.round(totalOk / totalN * 100) : 0}%</b></div><div>Màn đã qua<b>${passed()}/${totalLevels()}</b></div><div>Học liền<b>${streak()} ngày</b></div></div></div>
   <div class="panel"><b>⏱ Thời gian học 7 ngày qua (phút)</b><div class="chart" style="margin-top:10px">${days.map((d, i) =>
     `<div>${Math.round(secs[i] / 60)}<i style="height:${secs[i] / mx * 100}%"></i>${wd[d.getDay()]}</div>`).join('')}</div></div>
   <div class="panel"><b>🎯 Tỉ lệ đúng ngay lần đầu theo chủ đề</b>${catAcc.map(a => `<div class="acc"><span class="t">${a.c.icon} ${a.c.name}</span>
@@ -684,7 +810,45 @@ function parentReport(el) {
 function parentTime(el) {
   el.innerHTML = `<div class="panel" style="text-align:center"><b>Giới hạn thời gian chơi liên tục</b>
     <div class="small" style="margin:6px 0 10px">Hết giờ, bạn Cú sẽ nhắc bé nghỉ mắt 5 phút. Trong lúc nghỉ, app khoá lại; bố mẹ có thể mở khoá bằng phép tính.</div>
-    ${[0, 15, 20, 30, 45].map(m => `<button class="btn ${DB.limit === m ? '' : 'alt'}" onclick="DB.limit=${m};save();showParent('time')">${m ? m + ' phút' : 'Không giới hạn'}</button>`).join('')}</div>`;
+    ${[0, 15, 20, 30, 45].map(m => `<button class="btn ${DB.limit === m ? '' : 'alt'}" onclick="DB.limit=${m};save();showParent('time')">${m ? m + ' phút' : 'Không giới hạn'}</button>`).join('')}</div>
+  <div class="panel" style="text-align:center"><b>🎵 Âm lượng nhạc nền</b><br>
+    ${[[0, '🔇 Tắt'], [.1, 'Nhỏ'], [.22, 'Vừa'], [.35, 'To']].map(([v, n]) => { const on = v ? DB.music && DB.musicVol === v : !DB.music;
+      return `<button class="btn ${on ? '' : 'alt'}" onclick="setMusic(${v})">${n}</button>`; }).join('')}</div>
+  <div class="panel" style="text-align:center"><b>🗣️ Tốc độ giọng đọc</b>
+    <div class="small" style="margin:6px 0 10px">Chọn "Chậm" nếu bé mới làm quen, cần nghe rõ từng chữ.</div>
+    <button class="btn ${DB.slow ? 'alt' : ''}" onclick="DB.slow=false;save();showParent('time');say('chao')">Bình thường</button>
+    <button class="btn ${DB.slow ? '' : 'alt'}" onclick="DB.slow=true;save();showParent('time');say('chao')">🐢 Chậm</button></div>`;
+}
+function setMusic(v) {
+  if (!v) { if (DB.music) toggleMusic(); }
+  else { DB.musicVol = v; if (!DB.music) toggleMusic(); else NhacNen.setVolume(v); }
+  save(); showParent('time');
+}
+// Sao lưu: tải toàn bộ tiến độ các bé ra một file; khôi phục từ file đó (khi đổi máy, lỡ xoá trình duyệt)
+function parentBackup(el) {
+  el.innerHTML = `<div class="panel" style="text-align:center"><b>💾 Sao lưu tiến độ</b>
+    <div class="small" style="margin:6px 0 10px">Lưu lại sao, xu, thẻ, màn đã qua, huy chương của tất cả các bé vào một file trên máy. Nên sao lưu mỗi tuần một lần.</div>
+    <button class="btn" onclick="doBackup()">⬇️ Tải file sao lưu</button></div>
+  <div class="panel" style="text-align:center"><b>♻️ Khôi phục từ file</b>
+    <div class="small" style="margin:6px 0 10px">Chọn file sao lưu (tên bắt đầu bằng "toan-tu-duy"). Tiến độ hiện tại trên máy này sẽ được thay bằng tiến độ trong file. Giọng thu của bố mẹ không nằm trong file.</div>
+    <label class="btn alt" style="display:inline-block">📂 Chọn file<input type="file" accept=".json,application/json" hidden onchange="doRestore(this)"></label></div>`;
+}
+function doBackup() {
+  const data = JSON.stringify({ app: 'toan-tu-duy', ver: APP_VER, date: new Date().toISOString(), DB });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  a.download = 'toan-tu-duy-saoluu-' + today() + '.json'; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast('💾', 'Đã tải file sao lưu!<br><span class="small">Xem trong mục Tải xuống của máy</span>');
+}
+function doRestore(inp) {
+  const f = inp.files[0]; if (!f) return;
+  f.text().then(t => {
+    const d = JSON.parse(t);
+    if (d.app !== 'toan-tu-duy' || !d.DB || !d.DB.kids || !Object.keys(d.DB.kids).length) throw new Error('bad');
+    const names = Object.values(d.DB.kids).map(k => k.profile.name).join(', ');
+    if (!confirm('Khôi phục tiến độ của: ' + names + '?\nTiến độ hiện tại trên máy này sẽ bị thay thế.')) return;
+    localStorage.setItem('ttd', JSON.stringify(d.DB)); location.reload();
+  }).catch(() => toast('⚠️', 'File này không phải file sao lưu của app.'));
 }
 async function parentVoice(el) {
   await loadPraise();
@@ -697,7 +861,7 @@ async function record(btn) {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true }), mr = new MediaRecorder(stream), chunks = [];
     mr.ondataavailable = e => chunks.push(e.data);
-    mr.onstop = async () => { stream.getTracks().forEach(t => t.stop()); const blob = new Blob(chunks, { type: mr.mimeType }); await clipOp('readwrite', s => s.add(blob)); showParent('voice'); };
+    mr.onstop = async () => { stream.getTracks().forEach(t => t.stop()); duck(false); const blob = new Blob(chunks, { type: mr.mimeType }); await clipOp('readwrite', s => s.add(blob)); showParent('voice'); };
     if (window.NhacNen) NhacNen.setVolume(0);
     mr.start(); btn.textContent = '⏹ Đang thu… bấm để dừng'; btn.onclick = () => mr.state === 'recording' && mr.stop();
     setTimeout(() => mr.state === 'recording' && mr.stop(), 5000);

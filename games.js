@@ -325,13 +325,65 @@ Object.assign(GAMES, {
   } },
 });
 
+// ───── Vị trí & Thời gian ─────
+// Tranh nhỏ 3×3: đồ vật ở giữa, con vật ở trên / dưới / trái / phải
+const DIRS = { tren: [0, 1, 'trên', '⬆️ Trên'], duoi: [2, 1, 'dưới', '⬇️ Dưới'], trai: [1, 0, 'bên trái', '⬅️ Trái'], phai: [1, 2, 'bên phải', '➡️ Phải'] };
+const PLACES = ['📦', '🌳', '🪑', '🏠', '🚗', '⛺'];
+function posPic(obj, ani, dir, cls = '') {
+  const [r, c] = DIRS[dir], cells = Array(9).fill('');
+  cells[4] = obj; cells[r * 3 + c] = ani;
+  return `<div class="pos ${cls}">${cells.map(x => `<span>${x}</span>`).join('')}</div>`;
+}
+const DAYTIME = { sang: ['🌄 Sáng', ['🪥', '🐓', '🏫', '🥣']], trua: ['🌞 Trưa', ['🍱', '🍚']], toi: ['🌙 Tối', ['🛌', '🌃', '🦉', '💤']] };
+const SEQS = [['🥚', '🐣', '🐥', '🐔'], ['🌰', '🌱', '🌿', '🌳'], ['🌑', '🌒', '🌓', '🌔', '🌕'], ['😴', '🪥', '🥣', '🏫'], ['🛒', '🍳', '🍽️'], ['🐛', '🛌', '🦋']];
+const ORD = ['', 'nhất', 'hai', 'ba', 'tư', 'năm', 'sáu', 'bảy'];
+
+Object.assign(GAMES, {
+  vitri: { name: 'Trên - Dưới - Trái - Phải', icon: '🧭', make(L) {
+    const ask = L < 15 ? ['tren', 'duoi'] : Object.keys(DIRS), dir = pick(ask), obj = pick(PLACES), ani = pick(ANIMALS);
+    const ds = L < 8 ? ['tren', 'duoi'] : L < 15 ? ['tren', 'duoi', pick(['trai', 'phai'])] : Object.keys(DIRS);
+    return { q: 'Bé tìm hình con vật ở phía ' + DIRS[dir][2] + ' của đồ vật nhé!', v: ['vt1', 'p_' + dir, 'vt2'],
+      opts: shuffle(ds).map(d => ({ label: posPic(obj, ani, d), ok: d === dir })) };
+  } },
+  vitrihoi: { name: 'Bạn ở đâu?', icon: '📍', make(L) {
+    const dir = pick(L < 15 ? ['tren', 'duoi'] : Object.keys(DIRS));
+    const ds = L < 8 ? ['tren', 'duoi'] : L < 15 ? ['tren', 'duoi', pick(['trai', 'phai'])] : Object.keys(DIRS);
+    return { q: 'Con vật đang ở đâu so với đồ vật?', v: 'vthoi', html: posPic(pick(PLACES), pick(ANIMALS), dir, 'lg'),
+      opts: ds.map(d => ({ label: `<span class="wd">${DIRS[d][3]}</span>`, ok: d === dir, say: 't_' + d })) };
+  } },
+  buoi: { name: 'Sáng - Trưa - Tối', icon: '🌄', make(L) {
+    const ks = L < 10 ? ['sang', 'toi'] : ['sang', 'trua', 'toi'], t = pick(ks);
+    return { q: 'Việc này bé thường làm vào buổi nào?', v: 'buoi', html: `<div class="big">${pick(DAYTIME[t][1])}</div>`,
+      opts: ks.map(k => ({ label: `<span class="wd">${DAYTIME[k][0]}</span>`, ok: k === t, say: 'b_' + k })) };
+  } },
+  tieptheo: { name: 'Tiếp theo là gì?', icon: '⏭️', make(L) {
+    const s = pick(SEQS), p = 1 + R(s.length - 1), ans = s[p];
+    const others = shuffle([...s.filter(x => x !== ans), ...shuffle(SEQS.filter(x => x !== s)).flat()]);
+    const os = shuffle([ans, ...[...new Set(others)].slice(0, NK(L) - 1)]);
+    return { q: 'Chuyện gì sẽ xảy ra tiếp theo nhỉ?', v: 'tieptheo',
+      html: `<div class="seq em">${s.slice(0, p).map(x => `<b>${x}</b>`).join('<span class="arr">➜</span>')}<span class="arr">➜</span><b class="hole">?</b></div>`,
+      opts: os.map(x => ({ label: x, ok: x === ans })) };
+  } },
+  thutu: { name: 'Thứ tự', icon: '🚩', make(L) {
+    const n = L < 15 ? 3 : L < 30 ? 5 : 7, line = shuffle(ANIMALS).slice(0, n), k = 1 + R(n);
+    return { q: 'Bé tìm bạn đứng thứ ' + ORD[k] + ' tính từ lá cờ nhé!', v: ['thu1', 'o' + k, 'thu2'], layout: 'line',
+      opts: line.map((x, i) => ({ label: x, ok: i === k - 1 })) };
+  } },
+  // Tập viết số bằng ngón tay
+  vietso: { name: 'Tập viết số', icon: '✍️', special: 1, make(L) {
+    const d = R(L < 15 ? 6 : 11);
+    return { kind: 'trace', q: 'Bé tô theo nét số ' + d + ' rồi bấm Xong nhé!', v: ['viet1', 'w' + d, 'viet2'], d };
+  } },
+});
+
 const CATS = [
-  { name: 'Số và Đếm', icon: '🔢', color: '#ffe0ec', deco: '🎈', games: ['dem', 'nhieu', 'timnhom', 'sothieu', 'solon', 'nhanhmat', 'keoqua', 'latso', 'mecung'], v: 'cat0' },
+  { name: 'Số và Đếm', icon: '🔢', color: '#ffe0ec', deco: '🎈', games: ['dem', 'nhieu', 'timnhom', 'sothieu', 'solon', 'nhanhmat', 'keoqua', 'latso', 'mecung', 'vietso'], v: 'cat0' },
   { name: 'Gộp và Tách', icon: '🧮', color: '#fbdcf0', deco: '🍎', games: ['gop', 'bot', 'tach', 'domino', 'chimden', 'baydi', 'chuyencong', 'chuyentru', 'cuahang'], v: 'cat5' },
   { name: 'So sánh', icon: '📏', color: '#f3e0ff', deco: '🐘', games: ['dai', 'to', 'cao', 'nang'], v: 'cat1' },
   { name: 'Hình khối', icon: '🔷', color: '#ffd9e6', deco: '⭐', games: ['hinh', 'demhinh', 'giong', 'vathinh', 'tomau'], v: 'cat2' },
   { name: 'Quan sát', icon: '👀', color: '#ffe6f2', deco: '🔍', games: ['diemkhac', 'khac', 'timdoi', 'thieu', 'latthe', 'phanloai'], v: 'cat3' },
   { name: 'Suy luận', icon: '🧩', color: '#ecdcff', deco: '💡', games: ['quyluat', 'an', 'odau', 'nguoc', 'nghe', 'choan', 'venha'], v: 'cat4' },
+  { name: 'Vị trí & Thời gian', icon: '🧭', color: '#f9e0ff', deco: '⏰', games: ['vitri', 'vitrihoi', 'buoi', 'tieptheo', 'thutu'], v: 'cat6' },
 ];
 const CAT_OF = {}; CATS.forEach((c, i) => c.games.forEach(g => { CAT_OF[g] = i; }));
 

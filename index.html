@@ -236,6 +236,21 @@ input[type=text]{font:inherit;font-size:24px;padding:10px 16px;border-radius:16p
 @keyframes floatup{to{transform:translateY(-140px) scale(1.4);opacity:0}}
 .mascot .hat{position:absolute;left:50%;top:-24px;transform:translateX(-50%);font-size:32px}
 .mascot.happy{animation:jump .5s 2}.mascot.sad{animation:tilt 1s}
+/* ── Vị trí, tập viết, gợi ý, bài hôm nay ── */
+.pos{display:inline-grid;grid-template-columns:repeat(3,38px);grid-template-rows:repeat(3,38px);background:#fff3f8;border-radius:14px;padding:4px}
+.pos span{display:flex;align-items:center;justify-content:center;font-size:30px}
+.pos.lg{grid-template-columns:repeat(3,72px);grid-template-rows:repeat(3,72px)}.pos.lg span{font-size:56px}
+.wd{font-size:24px;font-weight:900;white-space:nowrap}
+/* Hàng "thứ tự": cả hàng luôn nằm gọn trên một màn hình (ô tự co lại trên điện thoại) */
+.opts.line{flex-wrap:nowrap;gap:clamp(3px,1.2vw,10px);justify-content:center;padding:8px 0}
+.opts.line::before{content:'🚩';font-size:clamp(28px,8vw,48px);align-self:center;flex:none}
+.opts.line .opt{flex:0 1 84px;min-width:0;min-height:clamp(52px,14vw,84px);font-size:clamp(24px,7.5vw,44px);padding:4px 0;border-radius:16px}
+.arr{font-size:26px;color:#e0408a;align-self:center}
+.tracebox{position:relative;width:min(100%,340px);margin:0 auto;border-radius:22px;background:#fff3f8;overflow:hidden}
+.tracebox canvas{position:absolute;inset:0;touch-action:none}
+.hintb{background:#fff3c4;box-shadow:0 4px 0 #e0c060}
+.bigbtn.daily{background:linear-gradient(90deg,#ffb347,#ff7eb3);box-shadow:0 6px 0 #d4507f}
+.bigbtn.daily.did{background:linear-gradient(90deg,#9be27a,#5cc8a0);box-shadow:0 6px 0 #3a9a70}
 /* ── Bố mẹ ── */
 .modal{position:fixed;inset:0;background:#0006;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal .panel{max-width:380px;width:100%}
