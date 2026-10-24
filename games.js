@@ -376,14 +376,108 @@ Object.assign(GAMES, {
   } },
 });
 
+// ───── Đồng hồ ─────
+// Mặt đồng hồ kim: kim ngắn (hồng) chỉ giờ, kim dài (xanh) ở số 12 = giờ đúng, ở số 6 = giờ rưỡi
+function clockSVG(h, half, s = 120) {
+  const nums = range(1, 12).map(n => { const a = n * Math.PI / 6;
+    return `<text x="${(50 + 37 * Math.sin(a)).toFixed(1)}" y="${(54 - 37 * Math.cos(a)).toFixed(1)}" font-size="12" text-anchor="middle" font-weight="900" fill="#3b2f2f">${n}</text>`; }).join('');
+  const hand = (deg, len, w, c) => { const r = deg * Math.PI / 180;
+    return `<line x1="50" y1="50" x2="${(50 + len * Math.sin(r)).toFixed(1)}" y2="${(50 - len * Math.cos(r)).toFixed(1)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`; };
+  return `<svg class="clock" width="${s}" height="${s}" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#fff" stroke="#ff7eb3" stroke-width="5"/>${nums}`
+    + hand(((h % 12) + (half ? .5 : 0)) * 30, 21, 7, '#e0408a') + hand(half ? 180 : 0, 33, 4, '#4fb3ff') + '<circle cx="50" cy="50" r="4.5" fill="#3b2f2f"/></svg>';
+}
+const timeText = (h, half) => h + (half ? ' giờ rưỡi' : ' giờ');
+const timeVoice = (h, half) => 'gio' + h + (half ? 'r' : '');
+// k thời điểm khác nhau; màn cao có thêm giờ rưỡi (và cùng giờ nhưng khác "đúng/rưỡi" để bé nhìn kỹ kim dài)
+function pickTimes(L, k) {
+  const out = [], key = t => t[0] + (t[1] ? 'r' : '');
+  const t0 = [1 + R(12), L >= 15 && Math.random() < .5]; out.push(t0);
+  if (L >= 15) out.push([t0[0], !t0[1]]);
+  while (out.length < k) { const t = [1 + R(12), L >= 15 && Math.random() < .5]; if (!out.some(x => key(x) === key(t))) out.push(t); }
+  return out;
+}
+
+// ───── Tiền Việt Nam (tờ tiền vẽ đơn giản, màu gần giống thật để bé nhận ra) ─────
+const money = v => v + '.000';
+const noteHTML = (v, cls = '') => `<div class="note n${v} ${cls}"><b>${money(v)}</b><small>đồng</small></div>`;
+// Chia n (nghìn) thành các tờ tiền ngẫu nhiên lấy từ vals
+function splitMoney(n, vals) {
+  const out = []; let left = n;
+  while (left > 0) { const ok = vals.filter(v => v <= left); const v = pick(ok); out.push(v); left -= v; }
+  return out.sort((a, b) => b - a);
+}
+
+// ───── Đối xứng: lưới ô màu, nửa phải là ảnh soi gương của nửa trái ─────
+const DXC = ['#ff5c9a', '#4fb3ff', '#ffc83d', '#7bd16b'];
+const mirror = g => g.map(row => [...row].reverse());
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const dxGrid = (g, cls = '') => `<div class="dx ${cls}" style="--c:${g[0].length}">${g.flat().map(c => `<i style="background:${c == null ? '#fff' : DXC[c]}"></i>`).join('')}</div>`;
+function dxHalf(L) {
+  const rows = L < 15 ? 3 : L < 35 ? 4 : 5, cols = L < 20 ? 2 : 3, nc = L < 25 ? 2 : 3;
+  let g;
+  do g = Array.from({ length: rows }, () => Array.from({ length: cols }, () => Math.random() < .3 ? null : R(nc)));
+  while (same(g, mirror(g)) || g.flat().every(c => c == null));
+  return g;
+}
+const tweak = g => { const h = g.map(r => [...r]); const r = R(h.length), c = R(h[0].length); h[r][c] = h[r][c] == null ? 0 : (h[r][c] + 1) % 3 || null; return h; };
+
+Object.assign(GAMES, {
+  dongho: { name: 'Xem đồng hồ', icon: '🕒', make(L) {
+    const ts = pickTimes(L, NK(L)), [h, half] = ts[0];
+    return { q: 'Đồng hồ chỉ mấy giờ?', v: 'dhmay', html: clockSVG(h, half, 170),
+      opts: shuffle(ts).map(t => ({ label: `<span class="wd">${timeText(t[0], t[1])}</span>`, ok: t === ts[0], say: timeVoice(t[0], t[1]) })) };
+  } },
+  chonho: { name: 'Chọn đồng hồ', icon: '⏰', make(L) {
+    const ts = pickTimes(L, L < 12 ? 3 : 4), [h, half] = ts[0];
+    return { q: 'Bé tìm đồng hồ chỉ ' + timeText(h, half), v: ['chondh', timeVoice(h, half)],
+      opts: shuffle(ts).map(t => ({ label: clockSVG(t[0], t[1], 96), ok: t === ts[0] })) };
+  } },
+  tienchon: { name: 'Nhận biết tiền', icon: '💵', make(L) {
+    const vals = L < 30 ? [1, 2, 5] : [1, 2, 5, 10], v = pick(vals);
+    return { q: 'Bé tìm tờ ' + money(v) + ' đồng', v: ['timto', 'tien' + v], opts: shuffle(vals).map(x => ({ label: noteHTML(x), ok: x === v, say: 'tien' + x })) };
+  } },
+  tiendem: { name: 'Đếm tiền', icon: '💰', make(L) {
+    const vals = L < 20 ? [1] : L < 35 ? [1, 2] : [1, 2, 5], max = Math.min(10, MX(L) + (L < 20 ? 0 : 2));
+    const n = 2 + R(max - 1), notes = splitMoney(n, vals);
+    return { q: 'Có tất cả bao nhiêu tiền?', v: 'tiendem', html: `<div class="notes">${notes.map(v => noteHTML(v, 'sm')).join('')}</div>`,
+      opts: numOpts(n, L, 1, 10).map(o => ({ label: `<span class="wd">${money(o.label)}đ</span>`, ok: o.ok, say: 'tien' + o.label })) };
+  } },
+  tienmua: { name: 'Trả tiền mua đồ', icon: '🛍️', make(L) {
+    const vals = L < 20 ? [1, 2] : [1, 2, 5], n = 2 + R(Math.min(10, MX(L) + 1) - 1);
+    const sums = shuffle([n, ...shuffle([n - 2, n - 1, n + 1, n + 2].filter(x => x >= 1 && x <= 10)).slice(0, NK(L) - 1)]);
+    return { q: 'Món đồ giá ' + money(n) + ' đồng. Bé chọn nhóm tiền vừa đủ nhé!', v: ['gia1', 'tien' + n, 'gia2'],
+      html: `<div class="shopq"><span class="big" style="font-size:72px">${pick(['🧸', '🍭', '🎈', '🍦', '🚗', '📚', '🪀', '🧃'])}</span><span class="tag">🏷️ ${money(n)}đ</span></div>`, layout: 'col',
+      opts: sums.map(s => ({ label: `<div class="notes">${splitMoney(s, vals).map(v => noteHTML(v, 'xs')).join('')}</div>`, ok: s === n })) };
+  } },
+  doixung: { name: 'Ghép hình đối xứng', icon: '🦋', make(L) {
+    const g = dxHalf(L), ans = mirror(g), cands = [ans, g, tweak(ans), [...ans].reverse(), tweak(g)];
+    const os = []; cands.forEach(c => { if (!os.some(o => same(o, c))) os.push(c); });
+    const opts = os.slice(0, NK(L));
+    return { q: 'Bé tìm nửa còn lại để ghép thành hình đối xứng nhé!', v: 'doixung',
+      html: `<div class="dxwrap">${dxGrid(g)}<span class="dxline"></span>${dxGrid(g.map(r => r.map(() => null)), 'empty')}</div>`,
+      opts: shuffle(opts).map(o => ({ label: dxGrid(o, 'sm'), ok: o === ans })) };
+  } },
+  dxhoi: { name: 'Hình đối xứng', icon: '🪞', make(L) {
+    const full = g => g.map((r, i) => [...r, ...mirror(g)[i]]);
+    const gs = Array.from({ length: NK(L) }, () => dxHalf(L));
+    const ok = full(gs[0]);
+    const bad = gs.slice(1).map(g => { const right = Math.random() < .5 ? g : tweak(mirror(g)); return g.map((r, i) => [...r, ...right[i]]); });
+    const isSym = m => m.every(r => same(r, [...r].reverse()));
+    const opts = [ok, ...bad.filter(m => !isSym(m))];
+    return { q: 'Hình nào có hai nửa giống hệt nhau như soi gương?', v: 'dxhoi',
+      opts: shuffle(opts).map(m => ({ label: dxGrid(m, 'sm full'), ok: m === ok })) };
+  } },
+});
+
 const CATS = [
   { name: 'Số và Đếm', icon: '🔢', color: '#ffe0ec', deco: '🎈', games: ['dem', 'nhieu', 'timnhom', 'sothieu', 'solon', 'nhanhmat', 'keoqua', 'latso', 'mecung', 'vietso'], v: 'cat0' },
   { name: 'Gộp và Tách', icon: '🧮', color: '#fbdcf0', deco: '🍎', games: ['gop', 'bot', 'tach', 'domino', 'chimden', 'baydi', 'chuyencong', 'chuyentru', 'cuahang'], v: 'cat5' },
   { name: 'So sánh', icon: '📏', color: '#f3e0ff', deco: '🐘', games: ['dai', 'to', 'cao', 'nang'], v: 'cat1' },
-  { name: 'Hình khối', icon: '🔷', color: '#ffd9e6', deco: '⭐', games: ['hinh', 'demhinh', 'giong', 'vathinh', 'tomau'], v: 'cat2' },
+  { name: 'Hình khối', icon: '🔷', color: '#ffd9e6', deco: '⭐', games: ['hinh', 'demhinh', 'giong', 'vathinh', 'tomau', 'doixung', 'dxhoi'], v: 'cat2' },
   { name: 'Quan sát', icon: '👀', color: '#ffe6f2', deco: '🔍', games: ['diemkhac', 'khac', 'timdoi', 'thieu', 'latthe', 'phanloai'], v: 'cat3' },
   { name: 'Suy luận', icon: '🧩', color: '#ecdcff', deco: '💡', games: ['quyluat', 'an', 'odau', 'nguoc', 'nghe', 'choan', 'venha'], v: 'cat4' },
   { name: 'Vị trí & Thời gian', icon: '🧭', color: '#f9e0ff', deco: '⏰', games: ['vitri', 'vitrihoi', 'buoi', 'tieptheo', 'thutu'], v: 'cat6' },
+  { name: 'Đồng hồ & Tiền', icon: '⏰', color: '#ffe8d6', deco: '💵', games: ['dongho', 'chonho', 'tienchon', 'tiendem', 'tienmua'], v: 'cat7' },
 ];
 const CAT_OF = {}; CATS.forEach((c, i) => c.games.forEach(g => { CAT_OF[g] = i; }));
 

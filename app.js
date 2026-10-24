@@ -1,5 +1,5 @@
 // Phần điều khiển của app: hồ sơ, màn chơi, chinh phục, phần thưởng, khu bố mẹ.
-const APP_VER = 8; // tăng cùng tên bộ nhớ trong sw.js mỗi lần cập nhật
+const APP_VER = 9; // tăng cùng tên bộ nhớ trong sw.js mỗi lần cập nhật
 let pendingReload = false; // có bản mới, chờ bé về trang chủ rồi tải lại
 const app = document.getElementById('app'), $ = id => document.getElementById(id);
 const today = () => new Date().toLocaleDateString('sv');
@@ -17,7 +17,16 @@ try {
     if (old && old.profile) { const id = 'k' + Date.now(); DB.kids[id] = Object.assign(newKid(old.profile), { prog: old.prog || {}, isles: old.isles || {}, time: old.time || {}, medals: old.medals || {} }); DB.cur = id; DB.music = old.music !== false; }
   }
 } catch (e) {}
-for (const id in DB.kids) DB.kids[id] = Object.assign(newKid(DB.kids[id].profile), DB.kids[id]);
+// Làm sạch dữ liệu (kể cả từ file sao lưu): tên không chứa ký tự < >, ảnh đại diện phải là ảnh thật hoặc 1 hình nhỏ,
+// mã hồ sơ chỉ gồm chữ/số — để tên lạ không làm vỡ giao diện hay chèn mã vào app.
+const cleanName = s => String(s || '').replace(/[<>]/g, '').trim().slice(0, 20) || 'Bé';
+const cleanAv = a => typeof a === 'string' && (/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(a) || (a.length <= 16 && !/[<>"'&]/.test(a))) ? a : '🐣';
+function cleanProfile(p) { return { name: cleanName(p && p.name), avatar: cleanAv(p && p.avatar) }; }
+for (const id in DB.kids) {
+  if (!/^[\w-]+$/.test(id) || !DB.kids[id] || typeof DB.kids[id] !== 'object') { delete DB.kids[id]; continue; }
+  DB.kids[id] = Object.assign(newKid(), DB.kids[id], { profile: cleanProfile(DB.kids[id].profile) });
+}
+if (!DB.kids[DB.cur]) DB.cur = Object.keys(DB.kids)[0] || null;
 let K = DB.kids[DB.cur] || null;
 const save = () => { try { localStorage.setItem('ttd', JSON.stringify(DB)); } catch (e) {} };
 
@@ -61,7 +70,7 @@ function checkMedals() {
 }
 
 // ───── Thanh trên ─────
-const avHTML = a => a && a.startsWith('data:') ? `<img src="${a}" alt="">` : (a || '🐣');
+const avHTML = a => { a = cleanAv(a); return a.startsWith('data:') ? `<img src="${a}" alt="">` : a; };
 const hatOf = () => { const h = SHOP.hat.find(x => x[0] === K.hat); return h ? h[1] : ''; };
 function refreshHead() {
   if (!K) return;
@@ -233,7 +242,7 @@ function upAv(inp) {
   }; img.src = URL.createObjectURL(f);
 }
 function saveProfile() {
-  const prof = { name: $('pname').value.trim() || 'Bé', avatar: draftAv };
+  const prof = cleanProfile({ name: $('pname').value, avatar: draftAv });
   if (editId === 'new') { const id = 'k' + Date.now(); DB.kids[id] = newKid(prof); DB.cur = id; K = DB.kids[id]; session = 0; }
   else DB.kids[editId].profile = prof;
   save(); refreshHead(); say('chao'); home();
@@ -254,6 +263,7 @@ function home() {
     <button class="qb" style="animation-delay:.05s" onclick="showAlbum()"><span class="ic">🎴</span>Thẻ sưu tầm<span class="dot">${Object.keys(K.stickers).length}</span></button>
     <button class="qb" style="animation-delay:.1s" onclick="showRoom()"><span class="ic">🏠</span>Phòng của bé</button>
     <button class="qb" style="animation-delay:.15s" onclick="showMedals()"><span class="ic">🏅</span>Huy chương<span class="dot">${Object.keys(K.medals).length}</span></button>
+    <button class="qb" style="animation-delay:.18s" onclick="showDuel()"><span class="ic">⚔️</span>Thi đua 2 bé</button>
     <button class="qb" style="animation-delay:.2s" onclick="gate(()=>showParent('report'))"><span class="ic">👨‍👩‍👧</span>Bố mẹ</button>
   </div>
   <button class="bigbtn daily ${dailyDone() ? 'did' : ''}" onclick="playDaily()"><span class="ic">📅</span><span style="text-align:left">${dailyDone() ? 'Bài hôm nay: đã xong ✅' : 'Bài hôm nay'}<br><span style="font-size:16px;font-weight:600">${dailyDone() ? 'Bé có thể làm thêm lần nữa · ' : '10 câu, ưu tiên phần bé cần luyện · '}${weekDots()}</span></span></button>
@@ -339,12 +349,48 @@ function playDaily() {
   run = { mode: 'daily', L: 0, qs: dailyQuestions(), i: 0, right: 0, intro: 'baihomnay' };
   setBack(home); studying = true; showQ();
 }
-function noteStat(key, ok) { const s = K.stats[key] || (K.stats[key] = { n: 0, ok: 0 }); s.n++; if (ok) s.ok++; }
+// ───── Thi đua 2 bé: đội Hồng và đội Xanh thay phiên trả lời trên cùng một máy ─────
+// Người chơi: các hồ sơ bé trong máy, hoặc "bạn khách" (không cần hồ sơ). Đúng ngay lần đầu được 1 điểm.
+const GUESTS = [{ id: 'g1', name: 'Bạn Gấu', avatar: '🐻' }, { id: 'g2', name: 'Bạn Thỏ', avatar: '🐰' }, { id: 'g3', name: 'Bạn Cáo', avatar: '🦊' }];
+const DUEL_LV = [[5, '🌱 Dễ'], [20, '🌿 Vừa'], [40, '🌳 Khó']];
+let duel = { pink: null, blue: null, L: 5 };
+function duelPlayers() { return [...Object.entries(DB.kids).map(([id, k]) => ({ id, name: k.profile.name, avatar: k.profile.avatar })), ...GUESTS]; }
+function showDuel() {
+  if (resting()) return showRest();
+  studying = false; setBack(home);
+  const ps = duelPlayers();
+  // bạn đã chọn mà hồ sơ vừa bị xoá thì bỏ chọn, để nút "Bắt đầu" không bấm được mà chẳng có gì xảy ra
+  ['pink', 'blue'].forEach(t => { if (duel[t] && !ps.some(p => p.id === duel[t])) duel[t] = null; });
+  if (!duel.pink && duel.blue !== DB.cur) duel.pink = DB.cur;
+  const row = team => `<div class="pickrow">${ps.map(p => { const other = team === 'pink' ? duel.blue : duel.pink;
+    return `<button class="${duel[team] === p.id ? 'sel ' + team : ''}" ${other === p.id ? 'disabled style="opacity:.35"' : ''} onclick="duel.${team}='${p.id}';showDuel()"><span class="av">${avHTML(p.avatar)}</span>${p.name}</button>`; }).join('')}</div>`;
+  app.innerHTML = `<div class="title">⚔️ Thi đua 2 bé</div>
+  <div class="small" style="text-align:center;margin:-6px 0 12px">Hai bạn thay phiên trả lời 10 câu. Đúng ngay lần đầu được 1 điểm. Bạn nào nhiều điểm hơn sẽ thắng!</div>
+  <div class="panel"><b style="color:#e0408a">🩷 Đội Hồng</b>${row('pink')}</div>
+  <div class="panel"><b style="color:#2a7fd0">💙 Đội Xanh</b>${row('blue')}</div>
+  <div class="panel" style="text-align:center"><b>Mức độ</b><br>${DUEL_LV.map(([L, n]) => `<button class="btn ${duel.L === L ? '' : 'alt'}" onclick="duel.L=${L};showDuel()">${n}</button>`).join('')}</div>
+  <div style="text-align:center"><button class="btn" style="font-size:24px" ${duel.pink && duel.blue ? '' : 'disabled style="opacity:.4"'} onclick="playDuel()">🏁 Bắt đầu thi!</button>
+  ${duel.pink && duel.blue ? '' : '<div class="small">Chọn bạn cho cả hai đội nhé</div>'}</div>`;
+}
+function playDuel() {
+  if (resting()) return showRest();
+  const ps = duelPlayers(), P = id => ps.find(p => p.id === id);
+  if (!P(duel.pink) || !P(duel.blue) || duel.pink === duel.blue) return showDuel();
+  run = { mode: 'duel', L: duel.L, qs: makeQuestions(CATS.flatMap(c => c.games), duel.L), i: 0, right: 0, players: [P(duel.pink), P(duel.blue)], score: [0, 0], intro: 'thidua' };
+  setBack(showDuel); studying = true; showQ();
+}
+function noteStat(key, ok) {
+  if (run && run.mode === 'duel') return; // thi đua không tính vào báo cáo của từng bé
+  const s = K.stats[key] || (K.stats[key] = { n: 0, ok: 0 }); s.n++; if (ok) s.ok++;
+}
 
 function showQ() {
   const it = run.qs[run.i], st = run.st = { wrong: 0, done: false };
-  const I = ISLANDS[run.ii];
-  const head = run.mode === 'isle'
+  const I = ISLANDS[run.ii], turn = run.i % 2;
+  const head = run.mode === 'duel'
+    ? `<div class="duelbar">${run.players.map((p, t) => `<div class="team ${t ? 'blue' : 'pink'} ${t === turn ? 'on' : ''}"><span class="av">${avHTML(p.avatar)}</span><span class="nm">${p.name}</span><b>${run.score[t]}</b></div>`).join('')}</div>
+       <div class="qhead"><b>${turn ? '💙 Lượt đội Xanh' : '🩷 Lượt đội Hồng'}</b><div class="qbar"><i style="width:${run.i * 10}%"></i></div><b>${run.i + 1}/10</b></div>`
+    : run.mode === 'isle'
     ? `<div class="path">${range(0, 9).map(i => `<span class="stone ${i < run.i ? 'done' : ''}">${i === run.i ? `<span class="me av">${avHTML(K.profile.avatar)}</span>` : ''}</span>`).join('')}<span style="font-size:34px">🎁</span></div>
        <div class="qhead"><span class="hearts" id="hearts"></span><span class="sp"></span><b>${I.icon} ${I.name}</b></div>
        ${it.boss ? `<div class="boss" id="boss"><span class="bi">${I.boss}</span><div>Trùm cuối: ${I.bossName}!<br><span style="font-weight:600;font-size:15px">Trả lời đúng để giải cứu bạn ${I.friend}</span></div></div>` : ''}`
@@ -355,7 +401,8 @@ function showQ() {
   $('sp').onclick = () => say(it.v);
   // Lời giới thiệu (vào đảo, gặp trùm) đọc liền trước câu hỏi, không bị cắt
   const intro = run.intro; run.intro = null;
-  setTimeout(() => say([intro, it.boss ? 'trum' : null, ...[].concat(it.v)]), 250);
+  const luot = run.mode === 'duel' ? (turn ? 'luotxanh' : 'luothong') : null;
+  setTimeout(() => say([intro, luot, it.boss ? 'trum' : null, ...[].concat(it.v)]), 250);
   const ctx = {
     st,
     wrong() {
@@ -376,6 +423,7 @@ function showQ() {
       // Dùng gợi ý thì không tính là "đúng ngay lần đầu"
       const first = !st.wrong && !st.hinted;
       noteStat(it.key, first); if (first) run.right++;
+      if (run.mode === 'duel' && first) { run.score[turn]++; const sc = app.querySelectorAll('.team b')[turn]; if (sc) { sc.textContent = run.score[turn]; burst(sc, ['⭐', '🏅']); } }
       const stage = app.querySelector('.stage'); if (stage) stage.classList.add('win');
       talk(pick(['Giỏi quá! 🎉', 'Đúng rồi! 🌟', 'Tuyệt vời! 👏', 'Bé thật thông minh! 🧠']));
       // Đợi đọc xong lời khen rồi mới sang câu mới (tối đa 10 giây phòng khi âm thanh bị kẹt)
@@ -665,6 +713,15 @@ function finish(lost) {
       ${run.L < 50 ? `<button class="btn" onclick="playLevel(${run.ci},${run.L + 1})">Màn tiếp ▶️</button>` : ''}
       <button class="btn alt" onclick="playLevel(${run.ci},${run.L})">🔁 Chơi lại</button><button class="btn alt" onclick="showLevels(${run.ci})">🗺️ Chọn màn</button></div>`;
     say(stk ? ['sao' + st, 'sticker'] : 'sao' + st); confetti(50);
+  } else if (run.mode === 'duel') {
+    // mỗi điểm = 1 xu cho bé có hồ sơ; bạn khách không có túi xu
+    run.players.forEach((p, t) => { if (DB.kids[p.id]) DB.kids[p.id].coins += run.score[t]; });
+    const [a, b] = run.score, win = a === b ? -1 : a > b ? 0 : 1; save();
+    app.innerHTML = `<div class="done panel"><div class="big">${win < 0 ? '🤝' : '🏆'}</div>${win < 0 ? 'Hai đội hòa nhau!<br>Cả hai đều rất giỏi!' : (win ? '💙 Đội Xanh' : '🩷 Đội Hồng') + ' chiến thắng!'}
+      <div class="duelbar" style="margin:14px 0">${run.players.map((p, t) => `<div class="team ${t ? 'blue' : 'pink'} on"><span class="av">${avHTML(p.avatar)}</span><span class="nm">${win === t ? '👑 ' : ''}${p.name}</span><b>${run.score[t]}</b></div>`).join('')}</div>
+      <div class="small">Mỗi điểm được 1 🪙 cho bé có hồ sơ</div><br>
+      <button class="btn" onclick="playDuel()">🔁 Thi tiếp</button><button class="btn alt" onclick="showDuel()">👥 Đổi bạn</button><button class="btn alt" onclick="home()">🏠 Trang chủ</button></div>`;
+    say(win < 0 ? 'hoa' : win ? 'thangxanh' : 'thanghong'); confetti(70);
   } else if (run.mode === 'daily') {
     K.daily[today()] = Math.max(K.daily[today()] || 0, st); K.coins += 3 + st;
     const stk = st >= 2 ? giveSticker() : null; save();

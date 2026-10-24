@@ -62,7 +62,7 @@ main{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:16px 16px
 /* ── Câu hỏi ── */
 .qhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .qbar{flex:1;height:16px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:inset 0 2px 0 #0001}.qbar i{display:block;height:100%;background:linear-gradient(90deg,#7bd16b,#3cb371);transition:width .4s}
-.q{font-size:23px;font-weight:800;text-align:center;margin:8px 0 14px;display:flex;align-items:center;justify-content:center;gap:10px;animation:slide .4s}
+.q{font-size:clamp(18px,5.4vw,23px);font-weight:800;text-align:center;margin:8px 0 14px;display:flex;align-items:center;justify-content:center;gap:10px;animation:slide .4s}
 @keyframes slide{from{opacity:0;transform:translateY(-14px)}}
 .speak{background:#ffd6e8;border-radius:50%;width:50px;height:50px;font-size:24px;flex:none;box-shadow:0 4px 0 #f0a3c4;animation:bob 2s infinite}
 .stage{background:var(--card);border-radius:26px;padding:18px;text-align:center;font-size:46px;line-height:1.25;box-shadow:0 6px 0 var(--sh);animation:popin .35s}
@@ -251,6 +251,37 @@ input[type=text]{font:inherit;font-size:24px;padding:10px 16px;border-radius:16p
 .hintb{background:#fff3c4;box-shadow:0 4px 0 #e0c060}
 .bigbtn.daily{background:linear-gradient(90deg,#ffb347,#ff7eb3);box-shadow:0 6px 0 #d4507f}
 .bigbtn.daily.did{background:linear-gradient(90deg,#9be27a,#5cc8a0);box-shadow:0 6px 0 #3a9a70}
+/* ── Đồng hồ, tiền, đối xứng ── */
+.clock{display:block;margin:auto;filter:drop-shadow(0 4px 0 #f5b3cf)}
+.notes{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.note{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:132px;height:64px;border-radius:10px;color:#fff;border:3px solid #fff8;box-shadow:0 3px 0 #0002;position:relative;overflow:hidden;line-height:1.1}
+.note::before{content:'';position:absolute;right:-14px;top:-14px;width:48px;height:48px;border-radius:50%;background:#fff3}
+.note b{font-size:26px;font-weight:900;text-shadow:0 2px 0 #0003}.note small{font-size:12px;font-weight:800;letter-spacing:1px}
+.note.n1{background:linear-gradient(135deg,#9a9a4a,#6e7a32)}.note.n2{background:linear-gradient(135deg,#b07a4a,#7a4f2a)}
+.note.n5{background:linear-gradient(135deg,#4a7ab8,#2a4f8a)}.note.n10{background:linear-gradient(135deg,#c79a3a,#9a6a1a)}
+.note.sm{width:104px;height:52px}.note.sm b{font-size:20px}
+.note.xs{width:72px;height:38px;border-width:2px}.note.xs b{font-size:14px}.note.xs small{font-size:9px}
+.opts.col .opt .notes{gap:5px}
+.dxwrap{display:inline-flex;align-items:stretch;gap:0}
+.dxline{width:0;border-left:4px dashed #e0408a;margin:0 4px}
+.dx{display:inline-grid;grid-template-columns:repeat(var(--c),30px);grid-auto-rows:30px;gap:3px;background:#f0d0e0;padding:3px;border-radius:8px}
+.dx i{display:block;border-radius:4px}
+.dx.empty i{background:#fff!important;outline:2px dashed #f5b3cf;outline-offset:-3px}
+.dx.sm{grid-template-columns:repeat(var(--c),20px);grid-auto-rows:20px;gap:2px}
+.dx.full{position:relative}.dx.full::after{content:'';position:absolute;left:50%;top:2px;bottom:2px;border-left:2px dashed #fff}
+/* ── Thi đua 2 bé ── */
+.duelbar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.team{flex:1;display:flex;align-items:center;gap:8px;border-radius:20px;padding:6px 12px;font-weight:900;font-size:18px;opacity:.55;transition:all .3s;min-width:0}
+.team b{font-size:28px;margin-left:auto}.team span.nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.team.pink{background:#ffd1e6;color:#b0306a}.team.blue{background:#d1e8ff;color:#2a5f9a}
+.team.on{opacity:1;transform:scale(1.04);box-shadow:0 0 0 4px currentColor}
+@media (max-width:420px){.team{gap:4px;padding:4px 8px;font-size:14px}.team .av{width:30px;height:30px;font-size:20px;border-width:2px}.team b{font-size:22px}}
+.pickrow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
+.pickrow button{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border-radius:18px;padding:6px 10px;font-weight:800;box-shadow:0 4px 0 var(--sh);min-width:76px}
+.pickrow button.sel.pink{outline:4px solid #ff5c9a}.pickrow button.sel.blue{outline:4px solid #4fb3ff}
+/* Màn hình hẹp: khi bé đang làm bài, bạn Cú (nổi ở góc) có thể che đáp án → ẩn đi; lời nhắn không chặn ngón tay */
+.bubble{pointer-events:none}
+@media (max-width:640px){body:has(#body) .mascot{display:none}body:has(#body) .bubble{bottom:20px}}
 /* ── Bố mẹ ── */
 .modal{position:fixed;inset:0;background:#0006;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal .panel{max-width:380px;width:100%}
